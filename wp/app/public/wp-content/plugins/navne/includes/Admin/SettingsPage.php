@@ -32,12 +32,13 @@ class SettingsPage {
 			echo '<div class="notice notice-error is-dismissible"><p>At least one post type must be selected.</p></div>';
 		}
 
-		$provider      = (string) get_option( 'navne_provider', 'anthropic' );
-		$api_key_set   = '' !== (string) get_option( 'navne_anthropic_api_key', '' );
-		$model         = (string) get_option( 'navne_anthropic_model', 'claude-sonnet-4-6' );
-		$mode          = (string) get_option( 'navne_operating_mode', 'suggest' );
-		$saved_types   = (array) get_option( 'navne_post_types', [ 'post' ] );
-		$all_types     = get_post_types( [ 'public' => true ], 'objects' );
+		$provider         = (string) get_option( 'navne_provider', 'anthropic' );
+		$api_key_set      = '' !== (string) get_option( 'navne_anthropic_api_key', '' );
+		$model            = (string) get_option( 'navne_anthropic_model', 'claude-sonnet-4-6' );
+		$mode             = (string) get_option( 'navne_operating_mode', 'suggest' );
+		$saved_types      = (array) get_option( 'navne_post_types', [ 'post' ] );
+		$all_types        = get_post_types( [ 'public' => true ], 'objects' );
+		$definitions_raw  = (string) get_option( 'navne_org_definitions', '' );
 		?>
 		<div class="wrap">
 			<h1>Navne Settings</h1>
@@ -119,6 +120,23 @@ class SettingsPage {
 					</tr>
 				</table>
 
+				<h2>Org Definitions</h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="navne_org_definitions">Definition list</label></th>
+						<td>
+							<p class="description" style="margin-bottom:8px;">One definition per line. Format: <code>Term: Description</code>. Lines starting with <code>#</code> are ignored.</p>
+							<textarea name="navne_org_definitions" id="navne_org_definitions"
+								class="large-text" rows="12"><?php echo esc_textarea( $definitions_raw ); ?></textarea>
+							<p class="description" style="margin-top:6px;">
+								Example:<br>
+								<code>DOE: The local school district, not the federal Department of Energy</code><br>
+								<code>Gov. Smith: Governor Jane Smith, incumbent since 2020</code>
+							</p>
+						</td>
+					</tr>
+				</table>
+
 				<?php submit_button( 'Save Settings' ); ?>
 			</form>
 		</div>
@@ -156,6 +174,10 @@ class SettingsPage {
 			exit;
 		}
 		update_option( 'navne_post_types', $clean_types );
+
+		// Org definitions.
+		$definitions = sanitize_textarea_field( wp_unslash( $_POST['navne_org_definitions'] ?? '' ) );
+		update_option( 'navne_org_definitions', $definitions );
 
 		wp_safe_redirect( admin_url( 'options-general.php?page=navne-settings&updated=1' ) );
 		exit;
