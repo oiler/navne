@@ -1,0 +1,11 @@
+{
+	"name": "navne-entity-linker",
+	"version": "0.1.0",
+	"scripts": {
+		"build": "wp-scripts build assets/js/sidebar/index.js --output-path=assets/js/build",
+		"start": "wp-scripts start assets/js/sidebar/index.js --output-path=assets/js/build"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^26.0"
+	}
+}
