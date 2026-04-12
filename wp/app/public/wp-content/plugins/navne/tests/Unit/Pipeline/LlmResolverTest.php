@@ -121,7 +121,6 @@ class LlmResolverTest extends TestCase {
 				 ->willReturn( '[]' );
 
 		( new LlmResolver( $provider ) )->resolve( $this->make_post(), '' );
-		$this->addToAssertionCount( 1 );
 	}
 
 	public function test_prompt_falls_back_when_no_definitions(): void {
@@ -136,6 +135,21 @@ class LlmResolverTest extends TestCase {
 				 ->willReturn( '[]' );
 
 		( new LlmResolver( $provider ) )->resolve( $this->make_post(), '' );
-		$this->addToAssertionCount( 1 );
+	}
+
+	public function test_prompt_falls_back_when_definitions_are_all_comments(): void {
+		Functions\when( 'get_option' )->alias( function ( string $key, mixed $default = null ) {
+			return $key === 'navne_org_definitions'
+				? "# Only comments here\n# Nothing valid\n\n"
+				: $default;
+		} );
+
+		$provider = $this->createMock( ProviderInterface::class );
+		$provider->expects( $this->once() )
+				 ->method( 'complete' )
+				 ->with( $this->stringContains( '(No organization-specific definitions configured.)' ) )
+				 ->willReturn( '[]' );
+
+		( new LlmResolver( $provider ) )->resolve( $this->make_post(), '' );
 	}
 }

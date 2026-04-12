@@ -1,5 +1,4 @@
 <?php
-// includes/Pipeline/LlmResolver.php
 namespace Navne\Pipeline;
 
 use Navne\Exception\PipelineException;
