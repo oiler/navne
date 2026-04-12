@@ -1,6 +1,7 @@
 <?php
 namespace Navne\Tests\Unit\Pipeline;
 
+use Brain\Monkey\Functions;
 use Navne\Exception\PipelineException;
 use Navne\Pipeline\Entity;
 use Navne\Pipeline\LlmResolver;
@@ -13,6 +14,14 @@ class LlmResolverTest extends TestCase {
 		$post->post_title   = $title;
 		$post->post_content = $content;
 		return $post;
+	}
+
+	protected function setUp(): void {
+		parent::setUp();
+		// Default stub for get_option to return empty string if not explicitly overridden in a test.
+		Functions\when( 'get_option' )->alias( function ( string $key, mixed $default = null ) {
+			return $key === 'navne_org_definitions' ? '' : $default;
+		} );
 	}
 
 	public function test_resolve_returns_entity_array(): void {
@@ -89,5 +98,44 @@ class LlmResolverTest extends TestCase {
 
 		$this->expectException( PipelineException::class );
 		( new LlmResolver( $provider ) )->resolve( $this->make_post(), '' );
+	}
+
+	public function test_prompt_includes_definitions_when_configured(): void {
+		Functions\when( 'get_option' )->alias( function ( string $key, mixed $default = null ) {
+			return $key === 'navne_org_definitions'
+				? "# Local figures\nDOE: The local school district\nGov. Smith: Governor Jane Smith\n\n"
+				: $default;
+		} );
+
+		$provider = $this->createMock( ProviderInterface::class );
+		$provider->expects( $this->once() )
+				 ->method( 'complete' )
+				 ->with(
+					 $this->logicalAnd(
+						 $this->stringContains( 'DOE: The local school district' ),
+						 $this->stringContains( 'Gov. Smith: Governor Jane Smith' ),
+						 $this->logicalNot( $this->stringContains( '# Local figures' ) ),
+						 $this->logicalNot( $this->stringContains( '(No organization-specific definitions configured.)' ) )
+					 )
+				 )
+				 ->willReturn( '[]' );
+
+		( new LlmResolver( $provider ) )->resolve( $this->make_post(), '' );
+		$this->addToAssertionCount( 1 );
+	}
+
+	public function test_prompt_falls_back_when_no_definitions(): void {
+		Functions\when( 'get_option' )->alias( function ( string $key, mixed $default = null ) {
+			return $key === 'navne_org_definitions' ? '' : $default;
+		} );
+
+		$provider = $this->createMock( ProviderInterface::class );
+		$provider->expects( $this->once() )
+				 ->method( 'complete' )
+				 ->with( $this->stringContains( '(No organization-specific definitions configured.)' ) )
+				 ->willReturn( '[]' );
+
+		( new LlmResolver( $provider ) )->resolve( $this->make_post(), '' );
+		$this->addToAssertionCount( 1 );
 	}
 }

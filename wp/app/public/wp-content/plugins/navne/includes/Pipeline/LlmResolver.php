@@ -1,4 +1,5 @@
 <?php
+// includes/Pipeline/LlmResolver.php
 namespace Navne\Pipeline;
 
 use Navne\Exception\PipelineException;
@@ -15,11 +16,12 @@ class LlmResolver implements ResolverInterface {
 	}
 
 	private function build_prompt( \WP_Post $post, string $extracted ): string {
+		$definitions = $this->format_definitions( (string) get_option( 'navne_org_definitions', '' ) );
 		return <<<PROMPT
 You are an entity extraction assistant for a news organization.
 
 [ORG DEFINITION LIST]
-(No organization-specific definitions configured.)
+{$definitions}
 
 Analyze the following article and return a JSON array of named entities.
 For each entity include:
@@ -37,6 +39,37 @@ Article:
 
 Respond with only a JSON array. No explanation.
 PROMPT;
+	}
+
+	private function format_definitions( string $raw ): string {
+		if ( '' === trim( $raw ) ) {
+			return '(No organization-specific definitions configured.)';
+		}
+
+		$lines  = explode( "\n", $raw );
+		$output = [];
+		foreach ( $lines as $line ) {
+			$line = trim( $line );
+			if ( '' === $line || str_starts_with( $line, '#' ) ) {
+				continue;
+			}
+			$colon = strpos( $line, ':' );
+			if ( false === $colon ) {
+				continue;
+			}
+			$term        = trim( substr( $line, 0, $colon ) );
+			$description = trim( substr( $line, $colon + 1 ) );
+			if ( '' === $term || '' === $description ) {
+				continue;
+			}
+			$output[] = "{$term}: {$description}";
+		}
+
+		if ( empty( $output ) ) {
+			return '(No organization-specific definitions configured.)';
+		}
+
+		return implode( "\n", $output );
 	}
 
 	/** @return Entity[] */
