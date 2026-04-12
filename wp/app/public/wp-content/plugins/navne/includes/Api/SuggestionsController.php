@@ -44,6 +44,9 @@ class SuggestionsController {
 		$post_id = (int) $request->get_param( 'post_id' );
 		$params  = $request->get_json_params();
 		$id      = (int) ( $params['id'] ?? 0 );
+		if ( ! $id ) {
+			return new \WP_REST_Response( [ 'error' => 'Missing id' ], 400 );
+		}
 		$row     = $this->table->find_by_id( $id );
 
 		if ( ! $row || (int) $row['post_id'] !== $post_id ) {
@@ -51,8 +54,15 @@ class SuggestionsController {
 		}
 
 		$this->table->update_status( $id, 'approved' );
-		$term    = wp_insert_term( $row['entity_name'], 'navne_entity' );
-		$term_id = is_wp_error( $term ) ? $term->get_error_data()['term_id'] : $term['term_id'];
+		$term = wp_insert_term( $row['entity_name'], 'navne_entity' );
+		if ( is_wp_error( $term ) ) {
+			if ( 'term_exists' !== $term->get_error_code() ) {
+				return new \WP_REST_Response( [ 'error' => 'Failed to create term' ], 500 );
+			}
+			$term_id = (int) $term->get_error_data( 'term_exists' );
+		} else {
+			$term_id = (int) $term['term_id'];
+		}
 		wp_set_post_terms( $post_id, [ $term_id ], 'navne_entity', true );
 		wp_cache_delete( 'navne_link_map_' . $post_id, 'navne' );
 
@@ -63,6 +73,9 @@ class SuggestionsController {
 		$post_id = (int) $request->get_param( 'post_id' );
 		$params  = $request->get_json_params();
 		$id      = (int) ( $params['id'] ?? 0 );
+		if ( ! $id ) {
+			return new \WP_REST_Response( [ 'error' => 'Missing id' ], 400 );
+		}
 		$row     = $this->table->find_by_id( $id );
 
 		if ( ! $row || (int) $row['post_id'] !== $post_id ) {
