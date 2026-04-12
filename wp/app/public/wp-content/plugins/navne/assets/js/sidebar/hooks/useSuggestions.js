@@ -37,12 +37,19 @@ export default function useSuggestions( postId ) {
 	const startPolling = useCallback( () => {
 		if ( pollRef.current ) return;
 		setIsLoading( true );
-		pollRef.current = setInterval( async () => {
-			const status = await fetchSuggestions();
+		// Fetch immediately, then poll every 3 seconds.
+		fetchSuggestions().then( ( status ) => {
 			if ( status === 'complete' || status === 'failed' ) {
 				stopPolling();
+				return;
 			}
-		}, 3000 );
+			pollRef.current = setInterval( async () => {
+				const s = await fetchSuggestions();
+				if ( s === 'complete' || s === 'failed' ) {
+					stopPolling();
+				}
+			}, 3000 );
+		} );
 	}, [ fetchSuggestions, stopPolling ] );
 
 	// Start polling after a save completes.
@@ -60,35 +67,50 @@ export default function useSuggestions( postId ) {
 	}, [ fetchSuggestions, stopPolling ] );
 
 	const approve = useCallback( async ( id ) => {
-		await apiFetch( {
-			path:   `/navne/v1/suggestions/${ postId }/approve`,
-			method: 'POST',
-			data:   { id },
+		setSuggestions( ( prev ) => {
+			return prev.map( ( s ) => ( s.id === id ? { ...s, status: 'approved' } : s ) );
 		} );
-		setSuggestions( ( prev ) =>
-			prev.map( ( s ) => ( s.id === id ? { ...s, status: 'approved' } : s ) )
-		);
+		try {
+			await apiFetch( {
+				path:   `/navne/v1/suggestions/${ postId }/approve`,
+				method: 'POST',
+				data:   { id },
+			} );
+		} catch {
+			// Rollback optimistic update on failure.
+			setSuggestions( ( prev ) =>
+				prev.map( ( s ) => ( s.id === id && s.status === 'approved' ? { ...s, status: 'pending' } : s ) )
+			);
+		}
 	}, [ postId ] );
 
 	const dismiss = useCallback( async ( id ) => {
-		await apiFetch( {
-			path:   `/navne/v1/suggestions/${ postId }/dismiss`,
-			method: 'POST',
-			data:   { id },
+		setSuggestions( ( prev ) => {
+			return prev.map( ( s ) => ( s.id === id ? { ...s, status: 'dismissed' } : s ) );
 		} );
-		setSuggestions( ( prev ) =>
-			prev.map( ( s ) => ( s.id === id ? { ...s, status: 'dismissed' } : s ) )
-		);
+		try {
+			await apiFetch( {
+				path:   `/navne/v1/suggestions/${ postId }/dismiss`,
+				method: 'POST',
+				data:   { id },
+			} );
+		} catch {
+			// Rollback optimistic update on failure.
+			setSuggestions( ( prev ) =>
+				prev.map( ( s ) => ( s.id === id && s.status === 'dismissed' ? { ...s, status: 'pending' } : s ) )
+			);
+		}
 	}, [ postId ] );
 
 	const retry = useCallback( async () => {
+		stopPolling();
 		await apiFetch( {
 			path:   `/navne/v1/suggestions/${ postId }/retry`,
 			method: 'POST',
 		} );
 		setJobStatus( 'queued' );
 		startPolling();
-	}, [ postId, startPolling ] );
+	}, [ postId, stopPolling, startPolling ] );
 
 	return { jobStatus, suggestions, isLoading, approve, dismiss, retry };
 }
