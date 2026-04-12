@@ -24,7 +24,7 @@ class PostSaveHookTest extends TestCase {
 		Functions\expect( 'as_enqueue_async_action' )->never();
 
 		PostSaveHook::handle( 1, $this->make_post( 'publish', 'page' ), true );
-		$this->assertTrue( true ); // explicit assertion to satisfy PHPUnit.
+		$this->addToAssertionCount( 1 );
 	}
 
 	public function test_dispatches_for_allowed_post_type(): void {
@@ -39,6 +39,6 @@ class PostSaveHookTest extends TestCase {
 		Functions\expect( 'as_enqueue_async_action' )->once()->andReturn( 1 );
 
 		PostSaveHook::handle( 1, $this->make_post( 'publish', 'page' ), true );
-		$this->assertTrue( true ); // explicit assertion to satisfy PHPUnit.
+		$this->addToAssertionCount( 1 );
 	}
 }
