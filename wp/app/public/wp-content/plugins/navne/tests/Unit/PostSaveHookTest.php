@@ -34,11 +34,10 @@ class PostSaveHookTest extends TestCase {
 		Functions\when( 'get_option' )->alias( function ( string $key, mixed $default = null ) {
 			return $key === 'navne_post_types' ? [ 'post', 'page' ] : $default;
 		} );
-		Functions\when( 'update_post_meta' )->justReturn( true );
+		Functions\expect( 'update_post_meta' )->twice();
 		Functions\when( 'current_time' )->justReturn( '2026-04-12 10:00:00' );
-		Functions\when( 'as_enqueue_async_action' )->justReturn( 1 );
+		Functions\expect( 'as_enqueue_async_action' )->once()->andReturn( 1 );
 
-		// Should complete without error — no assertion needed beyond no exception thrown.
 		PostSaveHook::handle( 1, $this->make_post( 'publish', 'page' ), true );
 		$this->assertTrue( true ); // explicit assertion to satisfy PHPUnit.
 	}
