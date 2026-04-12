@@ -5,6 +5,7 @@ namespace Navne\Admin;
 class SettingsPage {
 	public static function register_hooks(): void {
 		add_action( 'admin_menu', [ self::class, 'add_page' ] );
+		add_action( 'admin_post_navne_save_settings', [ self::class, 'handle_save' ] );
 	}
 
 	public static function add_page(): void {
@@ -22,10 +23,12 @@ class SettingsPage {
 			return;
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( isset( $_GET['updated'] ) ) {
 			echo '<div class="notice notice-success is-dismissible"><p>Settings saved.</p></div>';
 		}
-		if ( isset( $_GET['error'] ) && 'no_post_types' === $_GET['error'] ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( 'no_post_types' === sanitize_key( $_GET['error'] ?? '' ) ) {
 			echo '<div class="notice notice-error is-dismissible"><p>At least one post type must be selected.</p></div>';
 		}
 
@@ -124,7 +127,7 @@ class SettingsPage {
 
 	public static function handle_save(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( 'Unauthorized' );
+			wp_die( esc_html__( 'Unauthorized', 'navne' ) );
 		}
 		check_admin_referer( 'navne_settings' );
 
@@ -141,16 +144,13 @@ class SettingsPage {
 			update_option( 'navne_anthropic_api_key', $api_key );
 		}
 
-		// Operating mode — only 'suggest' is active; ignore disabled values.
-		$mode = sanitize_key( $_POST['navne_operating_mode'] ?? 'suggest' );
-		if ( ! in_array( $mode, [ 'safe', 'suggest', 'yolo' ], true ) ) {
-			$mode = 'suggest';
-		}
-		update_option( 'navne_operating_mode', $mode );
+		// Only 'suggest' is active — safe and yolo are coming soon. Enforce server-side.
+		update_option( 'navne_operating_mode', 'suggest' );
 
-		// Post types.
-		$raw_types     = isset( $_POST['navne_post_types'] ) ? (array) $_POST['navne_post_types'] : [];
-		$clean_types   = array_values( array_filter( array_map( 'sanitize_key', $raw_types ) ) );
+		// Post types — validate against registered public post types (allowlist approach).
+		$all_registered = array_keys( get_post_types( [ 'public' => true ] ) );
+		$raw_types      = isset( $_POST['navne_post_types'] ) ? (array) $_POST['navne_post_types'] : [];
+		$clean_types    = array_values( array_intersect( array_map( 'sanitize_key', $raw_types ), $all_registered ) );
 		if ( empty( $clean_types ) ) {
 			wp_redirect( admin_url( 'options-general.php?page=navne-settings&error=no_post_types' ) );
 			exit;
