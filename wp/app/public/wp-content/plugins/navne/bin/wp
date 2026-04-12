@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# bin/wp — WP-CLI wrapper for this Local site
+PHP="/Applications/Local.app/Contents/Resources/extraResources/lightning-services/php-8.2.27+1/bin/darwin-arm64/bin/php"
+WP_CLI="/Applications/Local.app/Contents/Resources/extraResources/bin/wp-cli/posix/wp"
+MYSQL_BIN="/Applications/Local.app/Contents/Resources/extraResources/lightning-services/mysql-8.0.35+4/bin/darwin-arm64/bin"
+WP_PATH="/Users/jrf1039/files/projects/navne/wp/app/public"
+
+export PATH="$MYSQL_BIN:$PATH"
+export WP_CLI_PHP="$PHP"
+exec "$PHP" "$WP_CLI" --path="$WP_PATH" "$@"

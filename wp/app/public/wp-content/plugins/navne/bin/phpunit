@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# bin/phpunit — PHPUnit runner for navne plugin
+PHP="/Applications/Local.app/Contents/Resources/extraResources/lightning-services/php-8.2.27+1/bin/darwin-arm64/bin/php"
+PLUGIN_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+exec "$PHP" "$PLUGIN_DIR/vendor/bin/phpunit" --configuration "$PLUGIN_DIR/phpunit.xml" "$@"

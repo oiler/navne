@@ -1,0 +1,22 @@
+{
+	"name": "navne/entity-linker",
+	"description": "Entity linking plugin for WordPress news organizations",
+	"require": {
+		"php": ">=8.0",
+		"woocommerce/action-scheduler": "^3.7"
+	},
+	"require-dev": {
+		"phpunit/phpunit": "^9.6",
+		"brain/monkey": "^2.6"
+	},
+	"autoload": {
+		"psr-4": {
+			"Navne\\": "includes/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"Navne\\Tests\\": "tests/"
+		}
+	}
+}
