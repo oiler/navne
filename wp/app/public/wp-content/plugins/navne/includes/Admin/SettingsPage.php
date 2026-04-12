@@ -152,12 +152,12 @@ class SettingsPage {
 		$raw_types      = isset( $_POST['navne_post_types'] ) ? (array) $_POST['navne_post_types'] : [];
 		$clean_types    = array_values( array_intersect( array_map( 'sanitize_key', $raw_types ), $all_registered ) );
 		if ( empty( $clean_types ) ) {
-			wp_redirect( admin_url( 'options-general.php?page=navne-settings&error=no_post_types' ) );
+			wp_safe_redirect( admin_url( 'options-general.php?page=navne-settings&error=no_post_types' ) );
 			exit;
 		}
 		update_option( 'navne_post_types', $clean_types );
 
-		wp_redirect( admin_url( 'options-general.php?page=navne-settings&updated=1' ) );
+		wp_safe_redirect( admin_url( 'options-general.php?page=navne-settings&updated=1' ) );
 		exit;
 	}
 }
