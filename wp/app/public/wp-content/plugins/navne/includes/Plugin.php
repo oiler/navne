@@ -21,6 +21,7 @@ class Plugin {
 		// Invalidate link cache when terms change.
 		add_action( 'set_object_terms', [ self::class, 'invalidate_link_cache' ], 10, 2 );
 		add_action( 'delete_term',      [ self::class, 'invalidate_term_cache' ] );
+		add_action( 'edit_term',        [ self::class, 'invalidate_term_cache' ] );
 	}
 
 	public static function make_pipeline(): EntityPipeline {

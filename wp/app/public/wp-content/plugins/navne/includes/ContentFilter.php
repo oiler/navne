@@ -45,7 +45,7 @@ class ContentFilter {
 				}
 				$escaped  = preg_quote( $name, '/' );
 				$new_part = preg_replace(
-					'/\b' . $escaped . '\b/u',
+					'/\b' . $escaped . '\b/iu',
 					'<a href="' . esc_url( $url ) . '">' . esc_html( $name ) . '</a>',
 					$part,
 					1,
