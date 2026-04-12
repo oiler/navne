@@ -14,13 +14,12 @@ class LlmResolver implements ResolverInterface {
 		return $this->parse_response( $response );
 	}
 
-	private function build_prompt( \WP_Post $post, string $extracted, string $definition_list = '' ): string {
-		$def_section = $definition_list ?: '(No organization-specific definitions configured.)';
+	private function build_prompt( \WP_Post $post, string $extracted ): string {
 		return <<<PROMPT
 You are an entity extraction assistant for a news organization.
 
 [ORG DEFINITION LIST]
-{$def_section}
+(No organization-specific definitions configured.)
 
 Analyze the following article and return a JSON array of named entities.
 For each entity include:
@@ -42,14 +41,17 @@ PROMPT;
 
 	/** @return Entity[] */
 	private function parse_response( string $response ): array {
-		// Strip markdown code fences (Claude sometimes wraps JSON even when asked not to).
-		$json = preg_replace( '/^```(?:json)?\s*/m', '', $response );
-		$json = preg_replace( '/^```\s*$/m', '', $json );
-		$json = trim( $json );
+		// Strip markdown code fences if the entire response is wrapped in one.
+		$stripped = preg_replace( '/^```[a-zA-Z]*\r?\n([\s\S]*?)\n```\s*$/s', '$1', trim( $response ) );
+		$json     = $stripped !== null ? $stripped : trim( $response );
 
 		$data = json_decode( $json, true );
 		if ( ! is_array( $data ) ) {
 			throw new PipelineException( "LLM returned invalid JSON: {$json}" );
+		}
+		// Guard against LLM returning a JSON object instead of an array.
+		if ( $data !== array_values( $data ) ) {
+			throw new PipelineException( "LLM returned a JSON object instead of an array" );
 		}
 
 		$entities = [];

@@ -69,12 +69,25 @@ class LlmResolverTest extends TestCase {
 		$provider = $this->createMock( ProviderInterface::class );
 		$provider->expects( $this->once() )
 				 ->method( 'complete' )
-				 ->with( $this->stringContains( 'NATO Summit Recap' ) )
+				 ->with(
+					 $this->logicalAnd(
+						 $this->stringContains( 'NATO Summit Recap' ),
+						 $this->stringContains( 'extracted content here' )
+					 )
+				 )
 				 ->willReturn( '[]' );
 
 		( new LlmResolver( $provider ) )->resolve(
 			$this->make_post( 'NATO Summit Recap' ),
 			'extracted content here'
 		);
+	}
+
+	public function test_resolve_throws_on_json_object_instead_of_array(): void {
+		$provider = $this->createMock( ProviderInterface::class );
+		$provider->method( 'complete' )->willReturn( '{"name":"Jane","type":"person","confidence":0.9}' );
+
+		$this->expectException( PipelineException::class );
+		( new LlmResolver( $provider ) )->resolve( $this->make_post(), '' );
 	}
 }
