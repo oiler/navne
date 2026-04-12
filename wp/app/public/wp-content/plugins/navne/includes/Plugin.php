@@ -2,6 +2,7 @@
 // includes/Plugin.php
 namespace Navne;
 
+use Navne\Admin\SettingsPage;
 use Navne\Api\SuggestionsController;
 use Navne\Jobs\ProcessPostJob;
 use Navne\Pipeline\EntityPipeline;
@@ -12,6 +13,8 @@ use Navne\Provider\ProviderFactory;
 class Plugin {
 	public static function init(): void {
 		Taxonomy::register_hooks();
+		SettingsPage::register_hooks();
+		add_action( 'admin_post_navne_save_settings', [ SettingsPage::class, 'handle_save' ] );
 		( new SuggestionsController() )->register_routes_on_init();
 		add_action( 'save_post',           [ PostSaveHook::class,   'handle' ], 10, 3 );
 		add_action( 'navne_process_post',  [ ProcessPostJob::class, 'run' ] );
