@@ -29,4 +29,17 @@ class ProviderFactoryTest extends TestCase {
 		$this->expectException( \RuntimeException::class );
 		ProviderFactory::make();
 	}
+
+	public function test_make_throws_on_missing_api_key(): void {
+		Functions\when( 'get_option' )->alias( function ( string $key, mixed $default = false ) {
+			return match( $key ) {
+				'navne_provider' => 'anthropic',
+				default          => $default,
+			};
+		} );
+
+		$this->expectException( \RuntimeException::class );
+		$this->expectExceptionMessage( 'navne_anthropic_api_key is not configured' );
+		ProviderFactory::make();
+	}
 }

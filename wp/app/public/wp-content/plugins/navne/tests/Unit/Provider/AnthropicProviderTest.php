@@ -29,6 +29,7 @@ class AnthropicProviderTest extends TestCase {
 		Functions\when( 'wp_json_encode' )->alias( 'json_encode' );
 
 		$this->expectException( PipelineException::class );
+		$this->expectExceptionMessage( 'Connection refused' );
 		( new AnthropicProvider( 'test-key' ) )->complete( 'prompt' );
 	}
 
@@ -36,6 +37,7 @@ class AnthropicProviderTest extends TestCase {
 		Functions\when( 'wp_remote_post' )->justReturn( [] );
 		Functions\when( 'is_wp_error' )->justReturn( false );
 		Functions\when( 'wp_remote_retrieve_response_code' )->justReturn( 429 );
+		Functions\when( 'wp_remote_retrieve_body' )->justReturn( '' );
 		Functions\when( 'wp_json_encode' )->alias( 'json_encode' );
 
 		$this->expectException( PipelineException::class );

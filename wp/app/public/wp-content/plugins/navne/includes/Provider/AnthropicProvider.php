@@ -30,10 +30,15 @@ class AnthropicProvider implements ProviderInterface {
 
 		$code = wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $code ) {
-			throw new PipelineException( "Anthropic API returned HTTP {$code}" );
+			$error_body    = json_decode( wp_remote_retrieve_body( $response ), true );
+			$api_message   = $error_body['error']['message'] ?? '(no body)';
+			throw new PipelineException( "Anthropic API returned HTTP {$code}: {$api_message}" );
 		}
 
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( ! is_array( $body ) ) {
+			throw new PipelineException( 'Anthropic API returned non-JSON response' );
+		}
 		if ( empty( $body['content'][0]['text'] ) ) {
 			throw new PipelineException( 'Anthropic API returned unexpected response shape' );
 		}
