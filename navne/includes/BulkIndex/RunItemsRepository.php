@@ -66,9 +66,16 @@ class RunItemsRepository {
 
 	public function claim_queued( int $run_id, int $limit ): array {
 		$table = $this->table_name();
-		// Atomic claim: UPDATE ... WHERE id IN (SELECT ... LIMIT). The nested SELECT
-		// avoids the "can't SELECT and UPDATE the same table in one statement" error
-		// in MySQL by wrapping the inner SELECT in a subquery alias.
+
+		// Capture MySQL's clock so the SELECT below can filter to rows this
+		// invocation just claimed. Using the DB clock avoids PHP/MySQL clock
+		// skew. Rows left in 'dispatching' by a prior crashed wave will have
+		// an earlier updated_at and be excluded.
+		$tick_start = (int) $this->db->get_var( "SELECT UNIX_TIMESTAMP()" );
+
+		// Atomic claim: UPDATE ... WHERE id IN (SELECT ... LIMIT). The nested
+		// SELECT wraps the inner LIMIT in a subquery alias to avoid MySQL's
+		// "can't SELECT and UPDATE the same table in one statement" error.
 		$this->db->query(
 			$this->db->prepare(
 				"UPDATE {$table}
@@ -88,8 +95,13 @@ class RunItemsRepository {
 
 		$post_ids = $this->db->get_col(
 			$this->db->prepare(
-				"SELECT post_id FROM {$table} WHERE run_id = %d AND status = 'dispatching' ORDER BY id ASC",
-				$run_id
+				"SELECT post_id FROM {$table}
+				 WHERE run_id = %d
+				   AND status = 'dispatching'
+				   AND UNIX_TIMESTAMP(updated_at) >= %d
+				 ORDER BY id ASC",
+				$run_id,
+				$tick_start
 			)
 		);
 

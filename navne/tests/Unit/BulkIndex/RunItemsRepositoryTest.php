@@ -89,4 +89,29 @@ class RunItemsRepositoryTest extends TestCase {
 		$repo = new RunItemsRepository( $wpdb );
 		$repo->update_status( 7, 101, "failed", "boom" );
 	}
+
+	public function test_find_failed_for_run_returns_post_and_error(): void {
+		$wpdb = $this->make_wpdb();
+		$wpdb->method( "prepare" )->willReturnArgument( 0 );
+		$wpdb->method( "get_results" )->willReturn( [
+			[ "post_id" => "101", "error_message" => "JSON parse failed" ],
+			[ "post_id" => "102", "error_message" => "rate limit"        ],
+		] );
+
+		$repo = new RunItemsRepository( $wpdb );
+		$rows = $repo->find_failed_for_run( 7, 10 );
+
+		$this->assertCount( 2, $rows );
+		$this->assertSame( "101", $rows[0]["post_id"] );
+		$this->assertSame( "JSON parse failed", $rows[0]["error_message"] );
+	}
+
+	public function test_find_failed_for_run_empty_returns_empty_array(): void {
+		$wpdb = $this->make_wpdb();
+		$wpdb->method( "prepare" )->willReturnArgument( 0 );
+		$wpdb->method( "get_results" )->willReturn( null );
+
+		$repo = new RunItemsRepository( $wpdb );
+		$this->assertSame( [], $repo->find_failed_for_run( 7, 10 ) );
+	}
 }
