@@ -21,6 +21,22 @@ All commands run from the `navne/` directory.
 - Tabs for indentation (PHP and JS)
 - Double quotes in PHP
 - WordPress naming conventions: snake_case functions/variables, PascalCase classes
+- PHP 8.0+ features preferred: typed properties, constructor promotion, match expressions, nullsafe operator (`?->`), union types, named arguments where they aid clarity
+
+# Testing
+
+This project uses red/green TDD throughout. No production code is written without a failing test first.
+
+The cycle for every change:
+1. **Red**: Write the failing test. Run it — confirm it fails for the right reason, not a syntax error or missing import.
+2. **Green**: Write the minimum code to make the test pass. Nothing more.
+3. **Commit**: Each red/green cycle ends in a commit.
+
+Rules:
+- Never write implementation code before a failing test exists for it — not even "obviously correct" one-liners
+- Test files live in `tests/Unit/` mirroring the `includes/` structure
+- Use Brain\Monkey for WordPress function mocking: `Functions\when()` for stubs, `Functions\expect()` for call-count/arg assertions
+- Run the full suite before every commit: `vendor/bin/phpunit` (from `navne/`)
 
 # Workflow
 
@@ -35,7 +51,7 @@ This is a public plugin. Follow this process for every release:
    - Explain what changed and why — what it means for newsroom editors, what was deliberately deferred
    - Add a `· [Technical changelog](../../CHANGELOG.md#xyz---yyyy-mm-dd)` link in the file header (after the date line)
 2. **Update `CHANGELOG.md`** — rename `[Unreleased]` to `[x.y.z] - YYYY-MM-DD`, open a new `[Unreleased]` block; for MINOR/MAJOR releases add a `[Full release notes](docs/releases/vX.Y.Z.md)` link below the version heading
-3. **Bump the version** in two places in `navne.php`: the `Version:` plugin header and the `NAVNE_VERSION` constant — both must match the tag
+3. **Bump the version** in three places: `navne.php` plugin header, `NAVNE_VERSION` constant, and `navne/package.json` — all three must match the tag
 4. **Commit**: `git commit -m "chore: release vX.Y.Z"`
 5. **Annotated tag**: `git tag -a vX.Y.Z -m "vX.Y.Z"`
 6. **Push**: `git push && git push hub vX.Y.Z`
@@ -60,7 +76,9 @@ Key design decisions from `docs/init/wordpress-entity-linking-plugin-notes.md`:
 
 # Security Standards
 
-These are established decisions for this codebase — follow them without being asked:
+Security is a standing requirement, not a checklist consulted on request. Before any code change is considered complete, run the `web-security` skill against it and verify the code passes the OWASP Top 10 checklist. This applies to every feature and fix, not just changes that are explicitly security-related.
+
+These specific patterns are established decisions for this codebase — follow them without being asked:
 
 **API keys and secrets**
 - Never store secrets in code. The Anthropic API key is read from `NAVNE_ANTHROPIC_API_KEY` constant (wp-config.php) first, falling back to `wp_options`. New secrets follow the same pattern.
@@ -111,6 +129,6 @@ These are established decisions for this codebase — follow them without being 
 - Use `superpowers:subagent-driven-development` or `superpowers:executing-plans` when asked to build
 - Use `wordpress-themes` and `wordpress-blocks` for WordPress plugin/theme development
 - Use `sass` for CSS/Sass work
-- Use `web-security` when writing or reviewing code for security
+- Use `web-security` skill on every code change — proactively, before considering any feature complete, not just when security is explicitly mentioned
 - Use `claude-api` skill when working on LLM API integration
 - Use `git-tagging` skill when cutting a release or managing versions
