@@ -4,13 +4,15 @@ A WordPress plugin for news organizations that automatically links proper nouns 
 
 # Commands
 
+All commands run from the `navne/` directory.
+
 ```bash
 # Install PHP deps:  composer install
 # Install JS deps:   npm install
 # Build assets:      npm run build
 # Dev watch:         npm run dev
-# Run tests:         phpunit
-# Run single test:   phpunit --filter TestClassName
+# Run tests:         vendor/bin/phpunit
+# Run single test:   vendor/bin/phpunit --filter TestClassName
 ```
 
 # Code Style
@@ -46,7 +48,7 @@ Semver rules:
 
 # Architecture
 
-Key design decisions from `docs/wordpress-entity-linking-plugin-notes.md`:
+Key design decisions from `docs/init/wordpress-entity-linking-plugin-notes.md`:
 
 - **Flat taxonomy**: One taxonomy for all entity types — People, Orgs, Places share a single vocabulary
 - **Render-time linking**: Links applied via `the_content` filter — never written to post content in the DB; clean archive
