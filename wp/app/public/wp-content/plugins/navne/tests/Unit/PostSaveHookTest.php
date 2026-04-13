@@ -32,7 +32,9 @@ class PostSaveHookTest extends TestCase {
 		Functions\when( 'wp_is_post_autosave' )->justReturn( false );
 		Functions\when( 'get_post_meta' )->justReturn( '' );
 		Functions\when( 'get_option' )->alias( function ( string $key, mixed $default = null ) {
-			return $key === 'navne_post_types' ? [ 'post', 'page' ] : $default;
+			if ( 'navne_post_types' === $key ) return [ 'post', 'page' ];
+			if ( 'navne_operating_mode' === $key ) return 'suggest';
+			return $default;
 		} );
 		Functions\expect( 'update_post_meta' )->twice();
 		Functions\when( 'current_time' )->justReturn( '2026-04-12 10:00:00' );
@@ -51,7 +53,6 @@ class PostSaveHookTest extends TestCase {
 			if ( 'navne_operating_mode' === $key ) return 'safe';
 			return $default;
 		} );
-		Functions\when( 'current_time' )->justReturn( '2026-04-12 10:00:00' );
 		Functions\expect( 'update_post_meta' )->never();
 		Functions\expect( 'as_enqueue_async_action' )->never();
 
