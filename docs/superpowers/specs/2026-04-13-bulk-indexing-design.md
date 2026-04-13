@@ -23,7 +23,7 @@ pending → running → complete
 ```
 
 1. Admin fills in the run form on Tools → Navne Indexing and clicks **Preview**.
-2. Plugin runs the scope query, renders a preview block: *"3,412 posts match. Average article costs ~$X to process. Proceed?"*
+2. Plugin runs the scope query, renders a preview block showing matched post count and a rough cost figure computed as `count * NAVNE_AVG_COST_PER_ARTICLE`.
 3. Admin confirms. A `bulk_runs` row is inserted with `status = 'pending'`. Every matched post ID is inserted into `bulk_run_items` with `status = 'queued'`. A single `navne_bulk_dispatch` action is scheduled.
 4. Dispatcher wakes up. If run is `cancelled`, exits. Otherwise flips to `running` on first wave, claims the next `NAVNE_BULK_BATCH_SIZE` queued items atomically, enqueues `navne_process_post` for each with a `bulk_run_id` arg, reschedules itself `NAVNE_BULK_BATCH_INTERVAL` seconds later.
 5. `ProcessPostJob` runs for each post. When invoked with a non-zero `bulk_run_id`, it delegates to `BulkAwareProcessor`, which flips the item row through `processing` → `complete`/`failed` and applies the run's frozen mode.
@@ -90,10 +90,10 @@ One URL, three views driven by query args:
 **Preview button** re-renders the same page with a results block:
 
 > **3,412 posts match your scope.**
-> Rough cost: average article ~$0.XX to process through Anthropic. At 3,412 posts that's roughly $YY.
+> Rough cost: average article ≈ `NAVNE_AVG_COST_PER_ARTICLE` to process through Anthropic. 3,412 posts × that constant ≈ the total shown here.
 > `[Run this indexing job]` `[Back]`
 
-The cost figure uses the `NAVNE_AVG_COST_PER_ARTICLE` constant (default `0.002`); no per-request calculation, no provider coupling.
+The cost figure uses the `NAVNE_AVG_COST_PER_ARTICLE` constant (default `0.002`); the preview multiplies the constant by the matched count and formats it to two decimal places. No per-request calculation, no provider coupling, no token-counting at preview time.
 
 **Empty whitelist warning (Safe mode only):** If the selected mode is Safe and `get_terms(['taxonomy' => 'navne_entity'])` is empty, the preview adds: *"Your whitelist is empty. A Safe mode run will process posts but create no tags. You may want to seed the whitelist first."* Admin can proceed anyway.
 
@@ -369,19 +369,25 @@ public static function run(
 
 The existing test-injection path (second arg is an `EntityPipeline`) is preserved by the type check. Post-save path passes nothing → 0 → existing behavior. Dispatcher path passes the run id → bulk path.
 
+**Refactor note:** the existing body of `ProcessPostJob::run` moves into a new private `run_single_post()` method with the same signature it has today. No behavior change to the single-post path; the rename is mechanical.
+
 `BulkAwareProcessor::process( int $post_id, int $run_id )`:
 
 ```
 1. Load the run row. If cancelled/complete → mark item 'skipped', return.
-2. Flip the run_items row for (run_id, post_id) from 'dispatching' → 'processing'.
-3. Set post meta _navne_job_status = 'processing' (mirrors single-post path).
-4. Try:
+2. Load the post. If the post no longer exists, is not in a publish status, or
+   its post_type is no longer in the navne_post_types allowlist → mark item
+   'skipped', return. (Handles races between scope query and dispatch: posts
+   trashed, privatized, or retyped after the run was created.)
+3. Flip the run_items row for (run_id, post_id) from 'dispatching' → 'processing'.
+4. Set post meta _navne_job_status = 'processing' (mirrors single-post path).
+5. Try:
      - $pipeline = Plugin::make_pipeline()
      - $entities = $pipeline->run( $post_id )
      - Apply mode-specific handling (below), using run.mode, NOT the current option
      - Flip run_items row to 'complete'
      - Post meta → 'complete'
-5. Catch Exception:
+6. Catch Exception:
      - Flip run_items row to 'failed' with truncated error message
      - Post meta → 'failed'
      - error_log(...)  — same as existing path
@@ -545,6 +551,8 @@ function ( \WP_REST_Request $request ) {
 - `test_suggest_mode_inserts_all_as_pending()`
 - `test_run_uses_frozen_mode_not_current_option()`
 - `test_cancelled_run_skips_processing_and_marks_item_skipped()`
+- `test_skipped_when_post_is_trashed_or_missing()` — post deleted or status flipped to draft between scope query and dispatch; item → skipped, pipeline not called
+- `test_skipped_when_post_type_no_longer_allowed()` — admin changed `navne_post_types` mid-run; item → skipped, pipeline not called
 - `test_pipeline_exception_marks_item_failed_with_truncated_message()`
 
 **`WhitelistTest.php`:**
