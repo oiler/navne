@@ -2,6 +2,8 @@
 // includes/BulkIndex/BulkAwareProcessor.php
 namespace Navne\BulkIndex;
 
+use Navne\BulkIndex\TermHelper;
+use Navne\Pipeline\Entity;
 use Navne\Pipeline\EntityPipeline;
 use Navne\Plugin;
 use Navne\Storage\SuggestionsTable;
@@ -65,7 +67,19 @@ class BulkAwareProcessor {
 				// Task 13
 				break;
 			case "yolo":
-				// Task 12
+				$high = array_values( array_filter( $entities, fn( Entity $e ) => $e->confidence >= 0.75 ) );
+				$low  = array_values( array_filter( $entities, fn( Entity $e ) => $e->confidence <  0.75 ) );
+				if ( ! empty( $high ) ) {
+					$table->insert_entities( $post_id, $high, "approved" );
+					foreach ( $high as $entity ) {
+						$term_id = TermHelper::ensure_term( $entity->name );
+						if ( $term_id > 0 ) {
+							wp_set_post_terms( $post_id, [ $term_id ], "navne_entity", true );
+						}
+					}
+					wp_cache_delete( "navne_link_map_" . $post_id, "navne" );
+				}
+				$table->insert_entities( $post_id, $low );
 				break;
 			case "suggest":
 			default:

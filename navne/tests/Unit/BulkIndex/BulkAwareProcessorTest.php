@@ -162,4 +162,36 @@ class BulkAwareProcessorTest extends TestCase {
 
 		BulkAwareProcessor::process( 101, 42, $pipeline, $table, $runs, $items );
 	}
+
+	public function test_yolo_mode_auto_approves_high_confidence_and_pends_low(): void {
+		$runs = $this->createMock( RunsRepository::class );
+		$runs->method( "find_by_id" )->willReturn( [ "id" => 42, "mode" => "yolo", "status" => "running" ] );
+
+		$items = $this->createMock( RunItemsRepository::class );
+		$items->method( "update_status" );
+
+		Functions\when( "get_post" )->justReturn( $this->make_post() );
+		Functions\when( "get_option" )->justReturn( [ "post" ] );
+		Functions\expect( "update_post_meta" )->twice();
+
+		$high     = new Entity( "Jane Smith", "person", 0.9 );
+		$low      = new Entity( "NATO",       "org",    0.6 );
+		$pipeline = $this->createMock( EntityPipeline::class );
+		$pipeline->method( "run" )->willReturn( [ $high, $low ] );
+
+		$table = $this->createMock( SuggestionsTable::class );
+		$table->expects( $this->exactly( 2 ) )
+			->method( "insert_entities" )
+			->withConsecutive(
+				[ 101, [ $high ], "approved" ],
+				[ 101, [ $low  ] ]
+			);
+
+		Functions\when( "wp_insert_term" )->justReturn( [ "term_id" => 7 ] );
+		Functions\when( "is_wp_error" )->justReturn( false );
+		Functions\expect( "wp_set_post_terms" )->once()->with( 101, [ 7 ], "navne_entity", true );
+		Functions\expect( "wp_cache_delete" )->once()->with( "navne_link_map_101", "navne" );
+
+		BulkAwareProcessor::process( 101, 42, $pipeline, $table, $runs, $items );
+	}
 }
