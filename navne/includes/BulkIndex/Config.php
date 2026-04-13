@@ -1,4 +1,5 @@
 <?php
+// includes/BulkIndex/Config.php
 namespace Navne\BulkIndex;
 
 class Config {
