@@ -19,7 +19,16 @@ define( 'NAVNE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 require_once NAVNE_PLUGIN_DIR . 'vendor/autoload.php';
 require_once NAVNE_PLUGIN_DIR . 'vendor/woocommerce/action-scheduler/action-scheduler.php';
 
-register_activation_hook( __FILE__, [ 'Navne\\Storage\\SuggestionsTable', 'create' ] );
-register_uninstall_hook( __FILE__, [ 'Navne\\Storage\\SuggestionsTable', 'drop' ] );
+register_activation_hook( __FILE__, function () {
+	\Navne\Storage\SuggestionsTable::create();
+	\Navne\BulkIndex\RunsRepository::create_table();
+	\Navne\BulkIndex\RunItemsRepository::create_table();
+} );
+
+register_uninstall_hook( __FILE__, function () {
+	\Navne\Storage\SuggestionsTable::drop();
+	\Navne\BulkIndex\RunsRepository::drop_table();
+	\Navne\BulkIndex\RunItemsRepository::drop_table();
+} );
 
 add_action( 'plugins_loaded', [ 'Navne\\Plugin', 'init' ] );
