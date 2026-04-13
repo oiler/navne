@@ -24,6 +24,22 @@ A WordPress plugin for news organizations that automatically links proper nouns 
 
 - Trunk-based: work directly on master, no formal PR process
 
+# Release Process
+
+This is a public plugin. Follow this process for every release:
+
+1. **Update `CHANGELOG.md`** — rename `[Unreleased]` to `[x.y.z] - YYYY-MM-DD`, open a new `[Unreleased]` block
+2. **Bump the version** in two places in `navne.php`: the `Version:` plugin header and the `NAVNE_VERSION` constant — both must match the tag
+3. **Commit**: `git commit -m "chore: release vX.Y.Z"`
+4. **Annotated tag**: `git tag -a vX.Y.Z -m "vX.Y.Z"`
+5. **Push**: `git push && git push origin vX.Y.Z`
+6. **GitHub Release**: `gh release create vX.Y.Z --title "vX.Y.Z" --notes-file <changelog fragment>`
+
+Semver rules:
+- `PATCH` — bug fixes only (e.g. v1.3.1)
+- `MINOR` — new backwards-compatible features (e.g. v1.4.0)
+- `MAJOR` — breaking changes (e.g. v2.0.0)
+
 # Architecture
 
 Key design decisions from `docs/wordpress-entity-linking-plugin-notes.md`:
@@ -65,3 +81,4 @@ Key design decisions from `docs/wordpress-entity-linking-plugin-notes.md`:
 - Use `sass` for CSS/Sass work
 - Use `web-security` when writing or reviewing code for security
 - Use `claude-api` skill when working on LLM API integration
+- Use `git-tagging` skill when cutting a release or managing versions
