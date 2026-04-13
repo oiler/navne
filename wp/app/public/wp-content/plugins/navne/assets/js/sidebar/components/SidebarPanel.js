@@ -10,17 +10,28 @@ export default function SidebarPanel() {
 	const postId = useSelect( ( select ) =>
 		select( 'core/editor' ).getCurrentPostId()
 	);
-	const { jobStatus, suggestions, isLoading, approve, dismiss, retry } =
+	const { jobStatus, suggestions, isLoading, mode, approve, dismiss, retry } =
 		useSuggestions( postId );
 
 	const pending = suggestions.filter( ( s ) => s.status === 'pending' );
 
 	return (
 		<PanelBody initialOpen={ true }>
-			{ jobStatus === 'idle' && (
+			{ jobStatus === 'idle' && mode !== 'safe' && (
 				<p style={ { color: '#666', fontSize: '13px' } }>
 					{ __( 'Save the post to detect entities.', 'navne' ) }
 				</p>
+			) }
+
+			{ jobStatus === 'idle' && mode === 'safe' && (
+				<>
+					<p style={ { color: '#666', fontSize: '13px' } }>
+						{ __( 'Safe mode — linking uses approved entities only.', 'navne' ) }
+					</p>
+					<Button variant="secondary" onClick={ retry }>
+						{ __( 'Process this article', 'navne' ) }
+					</Button>
+				</>
 			) }
 
 			{ ( jobStatus === 'queued' || jobStatus === 'processing' || isLoading ) && (

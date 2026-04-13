@@ -7,6 +7,7 @@ export default function useSuggestions( postId ) {
 	const [ jobStatus, setJobStatus ]     = useState( 'idle' );
 	const [ suggestions, setSuggestions ] = useState( [] );
 	const [ isLoading, setIsLoading ]     = useState( false );
+	const [ mode, setMode ]               = useState( 'suggest' );
 	const pollRef                         = useRef( null );
 	const wasSaving                       = useRef( false );
 
@@ -19,6 +20,7 @@ export default function useSuggestions( postId ) {
 			const data = await apiFetch( { path: `/navne/v1/suggestions/${ postId }` } );
 			setJobStatus( data.job_status );
 			setSuggestions( data.suggestions );
+			setMode( data.mode || 'suggest' );
 			return data.job_status;
 		} catch {
 			setJobStatus( 'failed' );
@@ -52,13 +54,17 @@ export default function useSuggestions( postId ) {
 		} );
 	}, [ fetchSuggestions, stopPolling ] );
 
-	// Start polling after a save completes.
+	// After a save: auto-poll in Suggest/YOLO; refresh state only in Safe.
 	useEffect( () => {
 		if ( wasSaving.current && ! isSaving ) {
-			startPolling();
+			if ( mode !== 'safe' ) {
+				startPolling();
+			} else {
+				fetchSuggestions();
+			}
 		}
 		wasSaving.current = isSaving;
-	}, [ isSaving, startPolling ] );
+	}, [ isSaving, mode, startPolling, fetchSuggestions ] );
 
 	// Load existing suggestions on mount.
 	useEffect( () => {
@@ -112,5 +118,5 @@ export default function useSuggestions( postId ) {
 		startPolling();
 	}, [ postId, stopPolling, startPolling ] );
 
-	return { jobStatus, suggestions, isLoading, approve, dismiss, retry };
+	return { jobStatus, suggestions, isLoading, mode, approve, dismiss, retry };
 }
