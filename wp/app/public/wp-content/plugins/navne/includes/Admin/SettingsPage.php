@@ -82,18 +82,20 @@ class SettingsPage {
 						<th scope="row">Mode</th>
 						<td>
 							<fieldset>
-								<label style="display:block;margin-bottom:6px;color:#999;">
-									<input type="radio" name="navne_operating_mode" value="safe" disabled />
-									Safe <span style="font-style:italic">(coming soon)</span>
+								<label style="display:block;margin-bottom:6px;">
+									<input type="radio" name="navne_operating_mode" value="safe"
+										<?php checked( $mode, 'safe' ); ?> />
+									Safe — only approved entities are linked; pipeline runs on demand
 								</label>
 								<label style="display:block;margin-bottom:6px;">
 									<input type="radio" name="navne_operating_mode" value="suggest"
 										<?php checked( $mode, 'suggest' ); ?> />
 									Suggest — editor reviews all suggestions before anything is linked
 								</label>
-								<label style="display:block;color:#999;">
-									<input type="radio" name="navne_operating_mode" value="yolo" disabled />
-									YOLO <span style="font-style:italic">(coming soon)</span>
+								<label style="display:block;">
+									<input type="radio" name="navne_operating_mode" value="yolo"
+										<?php checked( $mode, 'yolo' ); ?> />
+									YOLO — entities above 75% confidence are linked automatically
 								</label>
 							</fieldset>
 						</td>
@@ -162,8 +164,11 @@ class SettingsPage {
 			update_option( 'navne_anthropic_api_key', $api_key );
 		}
 
-		// Only 'suggest' is active — safe and yolo are coming soon. Enforce server-side.
-		update_option( 'navne_operating_mode', 'suggest' );
+		// Operating mode — validate against allowed values.
+		$allowed_modes = [ 'safe', 'suggest', 'yolo' ];
+		$mode_raw      = sanitize_key( $_POST['navne_operating_mode'] ?? 'suggest' );
+		$mode          = in_array( $mode_raw, $allowed_modes, true ) ? $mode_raw : 'suggest';
+		update_option( 'navne_operating_mode', $mode );
 
 		// Post types — validate against registered public post types (allowlist approach).
 		$all_registered = array_keys( get_post_types( [ 'public' => true ] ) );
