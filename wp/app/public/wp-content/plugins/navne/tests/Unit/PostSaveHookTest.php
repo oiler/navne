@@ -41,4 +41,21 @@ class PostSaveHookTest extends TestCase {
 		PostSaveHook::handle( 1, $this->make_post( 'publish', 'page' ), true );
 		$this->addToAssertionCount( 1 );
 	}
+
+	public function test_skips_dispatch_in_safe_mode(): void {
+		Functions\when( 'wp_is_post_revision' )->justReturn( false );
+		Functions\when( 'wp_is_post_autosave' )->justReturn( false );
+		Functions\when( 'get_post_meta' )->justReturn( '' );
+		Functions\when( 'get_option' )->alias( function ( string $key, mixed $default = null ) {
+			if ( 'navne_post_types' === $key ) return [ 'post' ];
+			if ( 'navne_operating_mode' === $key ) return 'safe';
+			return $default;
+		} );
+		Functions\when( 'current_time' )->justReturn( '2026-04-12 10:00:00' );
+		Functions\expect( 'update_post_meta' )->never();
+		Functions\expect( 'as_enqueue_async_action' )->never();
+
+		PostSaveHook::handle( 1, $this->make_post( 'publish', 'post' ), true );
+		$this->addToAssertionCount( 1 );
+	}
 }
