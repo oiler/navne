@@ -17,6 +17,7 @@ class Plugin {
 		( new SuggestionsController() )->register_routes_on_init();
 		add_action( 'save_post',           [ PostSaveHook::class,   'handle' ], 10, 3 );
 		add_action( 'navne_process_post',  [ ProcessPostJob::class, 'run' ] );
+		add_action( 'navne_bulk_dispatch', [ \Navne\BulkIndex\Dispatcher::class, 'run' ] );
 		add_filter( 'the_content',         [ new ContentFilter(),   'filter' ] );
 		add_action( 'enqueue_block_editor_assets', [ self::class,   'enqueue_sidebar' ] );
 
