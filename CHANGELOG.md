@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-04-13
+
+### Tests
+- PostSaveHook: added coverage for revision, autosave, non-published post, and in-flight job guards
+- ContentFilter: added coverage for non-singular context, regex metacharacters in entity names, and invalid `get_term_link` results
+
+### Documentation
+- CHANGELOG.md and `docs/releases/` files cross-linked — each narrative file links to its CHANGELOG entry; each CHANGELOG version links to its narrative file
+- Release process in CLAUDE.md updated to document when narrative release notes are required (MINOR and MAJOR only)
+
 ## [1.3.2] - 2026-04-13
 
 ### Security
@@ -29,6 +39,8 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [1.3.0] - 2026-04-12
 
+[Full release notes](docs/releases/v1.3.0.md)
+
 ### Added
 - Safe mode: pipeline does not auto-dispatch on save; Gutenberg sidebar shows a "Process this article" button to trigger on demand
 - YOLO mode: entities at ≥75% confidence are auto-approved, linked, and added to the taxonomy on save; lower-confidence entities surface as pending suggestions
@@ -40,17 +52,23 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [1.2.0] - 2026-04-12
 
+[Full release notes](docs/releases/v1.2.0.md)
+
 ### Added
 - Org definition list: freeform textarea on the settings page for local figures, acronyms, and jargon; primes the LLM prompt before each post is processed
 - Suggestion deduplication: pipeline filters out entities already approved for a post so re-saving does not re-surface reviewed suggestions
 
 ## [1.1.0] - 2026-04-12
 
+[Full release notes](docs/releases/v1.1.0.md)
+
 ### Added
 - Settings page under Settings → Navne: provider selection, API key, model, operating mode, and post type configuration
 - Post type guard: pipeline only dispatches for the post types configured on the settings page
 
 ## [1.0.0] - 2026-04-12
+
+[Full release notes](docs/releases/v1.0.0.md)
 
 ### Added
 - Async LLM pipeline via Action Scheduler (queued → processing → complete/failed lifecycle)

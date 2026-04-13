@@ -44,6 +44,58 @@ class PostSaveHookTest extends TestCase {
 		$this->addToAssertionCount( 1 );
 	}
 
+	public function test_skips_revision(): void {
+		Functions\when( 'wp_is_post_revision' )->justReturn( true );
+		Functions\when( 'wp_is_post_autosave' )->justReturn( false );
+		Functions\expect( 'update_post_meta' )->never();
+		Functions\expect( 'as_enqueue_async_action' )->never();
+
+		PostSaveHook::handle( 1, $this->make_post( 'publish', 'post' ), true );
+		$this->addToAssertionCount( 1 );
+	}
+
+	public function test_skips_autosave(): void {
+		Functions\when( 'wp_is_post_revision' )->justReturn( false );
+		Functions\when( 'wp_is_post_autosave' )->justReturn( true );
+		Functions\expect( 'update_post_meta' )->never();
+		Functions\expect( 'as_enqueue_async_action' )->never();
+
+		PostSaveHook::handle( 1, $this->make_post( 'publish', 'post' ), true );
+		$this->addToAssertionCount( 1 );
+	}
+
+	public function test_skips_unpublished_post(): void {
+		Functions\when( 'wp_is_post_revision' )->justReturn( false );
+		Functions\when( 'wp_is_post_autosave' )->justReturn( false );
+		Functions\expect( 'update_post_meta' )->never();
+		Functions\expect( 'as_enqueue_async_action' )->never();
+
+		PostSaveHook::handle( 1, $this->make_post( 'draft', 'post' ), true );
+		$this->addToAssertionCount( 1 );
+	}
+
+	public function test_skips_already_queued_post(): void {
+		Functions\when( 'wp_is_post_revision' )->justReturn( false );
+		Functions\when( 'wp_is_post_autosave' )->justReturn( false );
+		Functions\when( 'get_post_meta' )->justReturn( 'queued' );
+		Functions\expect( 'update_post_meta' )->never();
+		Functions\expect( 'as_enqueue_async_action' )->never();
+
+		PostSaveHook::handle( 1, $this->make_post( 'publish', 'post' ), true );
+		$this->addToAssertionCount( 1 );
+	}
+
+	public function test_skips_already_processing_post(): void {
+		Functions\when( 'wp_is_post_revision' )->justReturn( false );
+		Functions\when( 'wp_is_post_autosave' )->justReturn( false );
+		Functions\when( 'get_post_meta' )->justReturn( 'processing' );
+		Functions\expect( 'update_post_meta' )->never();
+		Functions\expect( 'as_enqueue_async_action' )->never();
+
+		PostSaveHook::handle( 1, $this->make_post( 'publish', 'post' ), true );
+		$this->addToAssertionCount( 1 );
+	}
+
 	public function test_skips_dispatch_in_safe_mode(): void {
 		Functions\when( 'wp_is_post_revision' )->justReturn( false );
 		Functions\when( 'wp_is_post_autosave' )->justReturn( false );

@@ -28,17 +28,21 @@ A WordPress plugin for news organizations that automatically links proper nouns 
 
 This is a public plugin. Follow this process for every release:
 
-1. **Update `CHANGELOG.md`** — rename `[Unreleased]` to `[x.y.z] - YYYY-MM-DD`, open a new `[Unreleased]` block
-2. **Bump the version** in two places in `navne.php`: the `Version:` plugin header and the `NAVNE_VERSION` constant — both must match the tag
-3. **Commit**: `git commit -m "chore: release vX.Y.Z"`
-4. **Annotated tag**: `git tag -a vX.Y.Z -m "vX.Y.Z"`
-5. **Push**: `git push && git push hub vX.Y.Z`
-6. **GitHub Release**: `gh release create vX.Y.Z --title "vX.Y.Z" --notes-file <changelog fragment>`
+1. **Write narrative release notes** *(MINOR and MAJOR only — skip for PATCH)*
+   - Create `docs/releases/vX.Y.Z.md` using the `writing-style` skill
+   - Explain what changed and why — what it means for newsroom editors, what was deliberately deferred
+   - Add a `· [Technical changelog](../../CHANGELOG.md#xyz---yyyy-mm-dd)` link in the file header (after the date line)
+2. **Update `CHANGELOG.md`** — rename `[Unreleased]` to `[x.y.z] - YYYY-MM-DD`, open a new `[Unreleased]` block; for MINOR/MAJOR releases add a `[Full release notes](docs/releases/vX.Y.Z.md)` link below the version heading
+3. **Bump the version** in two places in `navne.php`: the `Version:` plugin header and the `NAVNE_VERSION` constant — both must match the tag
+4. **Commit**: `git commit -m "chore: release vX.Y.Z"`
+5. **Annotated tag**: `git tag -a vX.Y.Z -m "vX.Y.Z"`
+6. **Push**: `git push && git push hub vX.Y.Z`
+7. **GitHub Release**: `gh release create vX.Y.Z --title "vX.Y.Z" --notes-file <changelog fragment>`
 
 Semver rules:
-- `PATCH` — bug fixes only (e.g. v1.3.1)
-- `MINOR` — new backwards-compatible features (e.g. v1.4.0)
-- `MAJOR` — breaking changes (e.g. v2.0.0)
+- `PATCH` — bug fixes only (e.g. v1.3.1); no narrative notes required
+- `MINOR` — new backwards-compatible features (e.g. v1.4.0); narrative notes required
+- `MAJOR` — breaking changes (e.g. v2.0.0); narrative notes required
 
 # Architecture
 
