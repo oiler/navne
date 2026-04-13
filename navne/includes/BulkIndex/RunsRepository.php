@@ -50,7 +50,7 @@ class RunsRepository {
 	}
 
 	public function create( array $data ): int {
-		$this->db->insert(
+		$result = $this->db->insert(
 			$this->table_name(),
 			[
 				"run_type"      => $data["run_type"],
@@ -66,6 +66,9 @@ class RunsRepository {
 			],
 			[ "%s", "%s", "%s", "%s", "%d", "%d", "%d", "%d", "%s", "%d" ]
 		);
+		if ( false === $result ) {
+			return 0;
+		}
 		return (int) $this->db->insert_id;
 	}
 
@@ -90,6 +93,7 @@ class RunsRepository {
 		);
 	}
 
+	/** Sets processed and failed to the given absolute values (not deltas). */
 	public function update_counts( int $id, int $processed, int $failed ): void {
 		$this->db->update(
 			$this->table_name(),
