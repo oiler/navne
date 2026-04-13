@@ -102,4 +102,36 @@ class ProcessPostJobTest extends TestCase {
 
 		ProcessPostJob::run( 1, $pipeline, $table );
 	}
+
+	public function test_adapter_invokes_single_post_when_second_arg_is_zero(): void {
+		$entities = [ new Entity( "Jane Smith", "person", 0.94 ) ];
+		$pipeline = $this->createMock( EntityPipeline::class );
+		$pipeline->method( "run" )->willReturn( $entities );
+
+		$table = $this->createMock( SuggestionsTable::class );
+		$table->method( "find_approved_names_for_post" )->willReturn( [] );
+		$table->expects( $this->once() )->method( "insert_entities" )->with( 1, $entities, "pending" );
+
+		Functions\when( "get_option" )->justReturn( "suggest" );
+		Functions\expect( "update_post_meta" )->twice();
+
+		// Explicitly pass 0 — the single-post path should run.
+		ProcessPostJob::run( 1, 0, null, $pipeline, $table );
+	}
+
+	public function test_adapter_preserves_pipeline_injection_backcompat(): void {
+		$entities = [ new Entity( "Jane Smith", "person", 0.94 ) ];
+		$pipeline = $this->createMock( EntityPipeline::class );
+		$pipeline->method( "run" )->willReturn( $entities );
+
+		$table = $this->createMock( SuggestionsTable::class );
+		$table->method( "find_approved_names_for_post" )->willReturn( [] );
+		$table->expects( $this->once() )->method( "insert_entities" )->with( 1, $entities, "pending" );
+
+		Functions\when( "get_option" )->justReturn( "suggest" );
+		Functions\expect( "update_post_meta" )->twice();
+
+		// Legacy three-arg call: (post_id, pipeline, table). Adapter must still route to single-post.
+		ProcessPostJob::run( 1, $pipeline, $table );
+	}
 }
