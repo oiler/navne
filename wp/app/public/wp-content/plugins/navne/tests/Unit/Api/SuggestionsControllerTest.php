@@ -13,6 +13,9 @@ class SuggestionsControllerTest extends TestCase {
 		$table->method( 'find_by_post' )->with( 10 )->willReturn( $rows );
 
 		Functions\when( 'get_post_meta' )->justReturn( 'complete' );
+		Functions\when( 'get_option' )->alias( function ( string $key, mixed $default = null ) {
+			return $key === 'navne_operating_mode' ? 'suggest' : $default;
+		} );
 
 		$request = new \WP_REST_Request();
 		$request->set_param( 'post_id', 10 );
@@ -58,5 +61,21 @@ class SuggestionsControllerTest extends TestCase {
 
 		$response = ( new SuggestionsController( $table ) )->retry( $request );
 		$this->assertSame( 'queued', $response->data['status'] );
+	}
+
+	public function test_get_suggestions_includes_mode(): void {
+		$table = $this->createMock( SuggestionsTable::class );
+		$table->method( 'find_by_post' )->willReturn( [] );
+
+		Functions\when( 'get_post_meta' )->justReturn( 'idle' );
+		Functions\when( 'get_option' )->alias( function ( string $key, mixed $default = null ) {
+			return $key === 'navne_operating_mode' ? 'yolo' : $default;
+		} );
+
+		$request = new \WP_REST_Request();
+		$request->set_param( 'post_id', 10 );
+
+		$response = ( new SuggestionsController( $table ) )->get_suggestions( $request );
+		$this->assertSame( 'yolo', $response->data['mode'] );
 	}
 }

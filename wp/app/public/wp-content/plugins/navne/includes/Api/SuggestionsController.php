@@ -37,6 +37,7 @@ class SuggestionsController {
 		return new \WP_REST_Response( [
 			'job_status'  => get_post_meta( $post_id, '_navne_job_status', true ) ?: 'idle',
 			'suggestions' => $this->table->find_by_post( $post_id ),
+			'mode'        => (string) get_option( 'navne_operating_mode', 'suggest' ),
 		] );
 	}
 
