@@ -18,7 +18,7 @@ class AnthropicProvider implements ProviderInterface {
 			],
 			'body'    => wp_json_encode( [
 				'model'      => $this->model,
-				'max_tokens' => 1024,
+				'max_tokens' => 4096,
 				'messages'   => [ [ 'role' => 'user', 'content' => $prompt ] ],
 			] ),
 			'timeout' => 30,
@@ -41,6 +41,9 @@ class AnthropicProvider implements ProviderInterface {
 		}
 		if ( empty( $body['content'][0]['text'] ) ) {
 			throw new PipelineException( 'Anthropic API returned unexpected response shape' );
+		}
+		if ( ( $body['stop_reason'] ?? '' ) === 'max_tokens' ) {
+			throw new PipelineException( 'Anthropic API response was truncated (max_tokens reached); increase the limit or shorten the input' );
 		}
 
 		return $body['content'][0]['text'];

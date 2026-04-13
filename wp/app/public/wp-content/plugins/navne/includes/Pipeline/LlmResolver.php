@@ -73,9 +73,13 @@ PROMPT;
 
 	/** @return Entity[] */
 	private function parse_response( string $response ): array {
-		// Strip markdown code fences if the entire response is wrapped in one.
-		$stripped = preg_replace( '/^```[a-zA-Z]*\r?\n([\s\S]*?)\n```\s*$/s', '$1', trim( $response ) );
-		$json     = $stripped !== null ? $stripped : trim( $response );
+		// Strip markdown code fences — find the first ```[lang]\n...\n``` block anywhere in the response.
+		// The LLM sometimes adds preamble text or a trailing note outside the fence.
+		if ( preg_match( '/```[a-zA-Z]*\r?\n([\s\S]*?)\n```/s', $response, $matches ) ) {
+			$json = trim( $matches[1] );
+		} else {
+			$json = trim( $response );
+		}
 
 		$data = json_decode( $json, true );
 		if ( ! is_array( $data ) ) {

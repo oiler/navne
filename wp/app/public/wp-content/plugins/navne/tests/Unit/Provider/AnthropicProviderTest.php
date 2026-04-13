@@ -33,6 +33,23 @@ class AnthropicProviderTest extends TestCase {
 		( new AnthropicProvider( 'test-key' ) )->complete( 'prompt' );
 	}
 
+	public function test_complete_throws_on_max_tokens_truncation(): void {
+		Functions\when( 'wp_remote_post' )->justReturn( [] );
+		Functions\when( 'is_wp_error' )->justReturn( false );
+		Functions\when( 'wp_remote_retrieve_response_code' )->justReturn( 200 );
+		Functions\when( 'wp_remote_retrieve_body' )->justReturn(
+			json_encode( [
+				'stop_reason' => 'max_tokens',
+				'content'     => [ [ 'type' => 'text', 'text' => '```json\n[{"name":"Gaza"' ] ],
+			] )
+		);
+		Functions\when( 'wp_json_encode' )->alias( 'json_encode' );
+
+		$this->expectException( PipelineException::class );
+		$this->expectExceptionMessage( 'truncated' );
+		( new AnthropicProvider( 'test-key' ) )->complete( 'prompt' );
+	}
+
 	public function test_complete_throws_on_non_200_status(): void {
 		Functions\when( 'wp_remote_post' )->justReturn( [] );
 		Functions\when( 'is_wp_error' )->justReturn( false );

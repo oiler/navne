@@ -115,6 +115,8 @@ export default function useSuggestions( postId ) {
 			method: 'POST',
 		} );
 		setJobStatus( 'queued' );
+		// Always poll after a manual retry regardless of mode — the user explicitly
+		// triggered processing, so we should show them the results as they arrive.
 		startPolling();
 	}, [ postId, stopPolling, startPolling ] );
 

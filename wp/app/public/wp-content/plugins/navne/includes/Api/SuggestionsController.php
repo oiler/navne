@@ -89,6 +89,9 @@ class SuggestionsController {
 		return new \WP_REST_Response( [ 'status' => 'dismissed' ] );
 	}
 
+	// Intentionally mode-agnostic: only called by an explicit user action ("Retry" / "Process this
+	// article"), so we always dispatch. ProcessPostJob reads the current mode at run time and applies
+	// the correct insert strategy.
 	public function retry( \WP_REST_Request $request ): \WP_REST_Response {
 		$post_id = (int) $request->get_param( 'post_id' );
 		$this->table->delete_pending_for_post( $post_id );

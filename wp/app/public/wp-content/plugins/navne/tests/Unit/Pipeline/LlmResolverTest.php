@@ -53,6 +53,28 @@ class LlmResolverTest extends TestCase {
 		$this->assertSame( 'Ukraine', $entities[0]->name );
 	}
 
+	public function test_resolve_strips_code_fence_with_preamble(): void {
+		$response = "Here are the entities:\n```json\n[{\"name\":\"Ukraine\",\"type\":\"place\",\"confidence\":0.97}]\n```";
+		$provider = $this->createMock( ProviderInterface::class );
+		$provider->method( 'complete' )->willReturn( $response );
+
+		$entities = ( new LlmResolver( $provider ) )->resolve( $this->make_post(), '' );
+
+		$this->assertCount( 1, $entities );
+		$this->assertSame( 'Ukraine', $entities[0]->name );
+	}
+
+	public function test_resolve_strips_code_fence_with_trailing_text(): void {
+		$response = "```json\n[{\"name\":\"Ukraine\",\"type\":\"place\",\"confidence\":0.97}]\n```\n\nNote: one entity found.";
+		$provider = $this->createMock( ProviderInterface::class );
+		$provider->method( 'complete' )->willReturn( $response );
+
+		$entities = ( new LlmResolver( $provider ) )->resolve( $this->make_post(), '' );
+
+		$this->assertCount( 1, $entities );
+		$this->assertSame( 'Ukraine', $entities[0]->name );
+	}
+
 	public function test_resolve_throws_pipeline_exception_on_invalid_json(): void {
 		$provider = $this->createMock( ProviderInterface::class );
 		$provider->method( 'complete' )->willReturn( 'not json at all' );

@@ -17,7 +17,7 @@ class ProcessPostJobTest extends TestCase {
 
 		$table = $this->createMock( SuggestionsTable::class );
 		$table->method( 'find_approved_names_for_post' )->willReturn( [] );
-		$table->expects( $this->once() )->method( 'insert_entities' )->with( 1, $entities );
+		$table->expects( $this->once() )->method( 'insert_entities' )->with( 1, $entities, 'pending' );
 
 		Functions\when( 'get_option' )->justReturn( 'suggest' );
 		Functions\expect( 'update_post_meta' )->twice();
