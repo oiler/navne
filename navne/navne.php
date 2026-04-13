@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Navne Entity Linker
  * Description: Automatically links named entities in posts to taxonomy archive pages.
- * Version:     1.3.3
+ * Version:     1.4.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Text Domain: navne
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NAVNE_VERSION', '1.3.3' );
+define( 'NAVNE_VERSION', '1.4.0' );
 define( 'NAVNE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'NAVNE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 

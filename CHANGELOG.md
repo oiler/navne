@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-04-13
+
+[Full release notes](docs/releases/v1.4.0.md)
+
+### Added
+
+- Tools → Navne Indexing admin page for bulk entity processing
+- Three run types: index new, re-index all, retry failed
+- Per-run mode picker (Safe / Suggest / YOLO) that doesn't require changing global operating mode
+- Optional date-range scope filter
+- Live progress view with cancel
+- First-class run history (last 10 runs) and REST API for run details
+- Safe mode whitelist enforcement — runs pipeline but tags only entities already on `navne_entity`, dropping unmatched silently
+
+### Changed
+
+- `ProcessPostJob::run()` split into adapter + `run_single_post()` to support the bulk dispatch path
+- Term creation race recovery extracted into `TermHelper::ensure_term()` — no behavior change
+
 ## [1.3.3] - 2026-04-13
 
 ### Tests
