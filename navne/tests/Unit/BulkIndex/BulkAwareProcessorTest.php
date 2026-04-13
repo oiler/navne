@@ -194,4 +194,66 @@ class BulkAwareProcessorTest extends TestCase {
 
 		BulkAwareProcessor::process( 101, 42, $pipeline, $table, $runs, $items );
 	}
+
+	public function test_safe_mode_keeps_only_whitelist_matched_entities(): void {
+		\Navne\BulkIndex\Whitelist::reset();
+		Functions\when( "get_terms" )->justReturn( [ "Jane Smith" ] );
+		Functions\when( "is_wp_error" )->justReturn( false );
+
+		$runs = $this->createMock( RunsRepository::class );
+		$runs->method( "find_by_id" )->willReturn( [ "id" => 42, "mode" => "safe", "status" => "running" ] );
+
+		$items = $this->createMock( RunItemsRepository::class );
+		$items->method( "update_status" );
+
+		Functions\when( "get_post" )->justReturn( $this->make_post() );
+		Functions\when( "get_option" )->justReturn( [ "post" ] );
+		Functions\expect( "update_post_meta" )->twice();
+
+		$matched   = new Entity( "Jane Smith", "person", 0.9 );
+		$unmatched = new Entity( "Bob Jones",  "person", 0.95 );
+
+		$pipeline = $this->createMock( EntityPipeline::class );
+		$pipeline->method( "run" )->willReturn( [ $matched, $unmatched ] );
+
+		$table = $this->createMock( SuggestionsTable::class );
+		$table->expects( $this->once() )
+			->method( "insert_entities" )
+			->with( 101, [ $matched ], "approved" );
+
+		Functions\when( "wp_insert_term" )->justReturn( [ "term_id" => 7 ] );
+		Functions\expect( "wp_set_post_terms" )->once()->with( 101, [ 7 ], "navne_entity", true );
+		Functions\expect( "wp_cache_delete" )->once();
+
+		BulkAwareProcessor::process( 101, 42, $pipeline, $table, $runs, $items );
+	}
+
+	public function test_safe_mode_empty_whitelist_is_noop(): void {
+		\Navne\BulkIndex\Whitelist::reset();
+		Functions\when( "get_terms" )->justReturn( [] );
+		Functions\when( "is_wp_error" )->justReturn( false );
+
+		$runs = $this->createMock( RunsRepository::class );
+		$runs->method( "find_by_id" )->willReturn( [ "id" => 42, "mode" => "safe", "status" => "running" ] );
+
+		$items = $this->createMock( RunItemsRepository::class );
+		$items->method( "update_status" );
+
+		Functions\when( "get_post" )->justReturn( $this->make_post() );
+		Functions\when( "get_option" )->justReturn( [ "post" ] );
+		Functions\expect( "update_post_meta" )->twice();
+
+		$pipeline = $this->createMock( EntityPipeline::class );
+		$pipeline->method( "run" )->willReturn( [
+			new Entity( "Jane Smith", "person", 0.9 ),
+			new Entity( "Bob Jones",  "person", 0.95 ),
+		] );
+
+		$table = $this->createMock( SuggestionsTable::class );
+		$table->expects( $this->never() )->method( "insert_entities" );
+
+		Functions\expect( "wp_insert_term" )->never();
+
+		BulkAwareProcessor::process( 101, 42, $pipeline, $table, $runs, $items );
+	}
 }

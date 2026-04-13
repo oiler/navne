@@ -64,7 +64,22 @@ class BulkAwareProcessor {
 	private static function apply_mode( string $mode, int $post_id, array $entities, SuggestionsTable $table ): void {
 		switch ( $mode ) {
 			case "safe":
-				// Task 13
+				$whitelist = Whitelist::current();
+				$matched   = array_values( array_filter(
+					$entities,
+					fn( Entity $e ) => $whitelist->contains( $e->name )
+				) );
+				if ( empty( $matched ) ) {
+					break;
+				}
+				$table->insert_entities( $post_id, $matched, "approved" );
+				foreach ( $matched as $entity ) {
+					$term_id = TermHelper::ensure_term( $entity->name );
+					if ( $term_id > 0 ) {
+						wp_set_post_terms( $post_id, [ $term_id ], "navne_entity", true );
+					}
+				}
+				wp_cache_delete( "navne_link_map_" . $post_id, "navne" );
 				break;
 			case "yolo":
 				$high = array_values( array_filter( $entities, fn( Entity $e ) => $e->confidence >= 0.75 ) );
