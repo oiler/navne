@@ -52,4 +52,14 @@ class SuggestionsTableTest extends TestCase {
 
 		( new SuggestionsTable( $db ) )->delete_pending_for_post( 5 );
 	}
+
+	public function test_find_approved_names_for_post_returns_lowercase_names(): void {
+		$db = $this->make_db();
+		$db->method( 'prepare' )->willReturn( 'prepared_sql' );
+		$db->method( 'get_col' )->willReturn( [ 'Jane Smith', 'NATO' ] );
+
+		$result = ( new SuggestionsTable( $db ) )->find_approved_names_for_post( 1 );
+
+		$this->assertSame( [ 'jane smith', 'nato' ], $result );
+	}
 }

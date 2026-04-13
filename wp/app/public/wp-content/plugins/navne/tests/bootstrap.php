@@ -55,6 +55,7 @@ if ( ! class_exists( 'wpdb' ) ) {
 		public function delete( string $t, array $w, array $f = [] ): int|false { return 1; }
 		public function get_results( string $q, string $o = 'OBJECT' ): array   { return []; }
 		public function get_row( string $q, string $o = 'OBJECT', int $y = 0 ): mixed { return null; }
+		public function get_col( string $q, int $col_offset = 0 ): array             { return []; }
 		public function query( string $q ): int|bool                             { return true; }
 	}
 }

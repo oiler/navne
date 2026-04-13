@@ -99,4 +99,15 @@ class SuggestionsTable {
 			[ '%d', '%s' ]
 		);
 	}
+
+	/** @return string[] Lowercased entity names already approved for this post. */
+	public function find_approved_names_for_post( int $post_id ): array {
+		$rows = $this->db->get_col(
+			$this->db->prepare(
+				"SELECT entity_name FROM {$this->table_name()} WHERE post_id = %d AND status = 'approved'",
+				$post_id
+			)
+		);
+		return array_map( 'strtolower', $rows ?? [] );
+	}
 }

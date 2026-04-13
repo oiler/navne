@@ -16,7 +16,24 @@ class ProcessPostJobTest extends TestCase {
 		$pipeline->method( 'run' )->willReturn( $entities );
 
 		$table = $this->createMock( SuggestionsTable::class );
+		$table->method( 'find_approved_names_for_post' )->willReturn( [] );
 		$table->expects( $this->once() )->method( 'insert_entities' )->with( 1, $entities );
+
+		Functions\expect( 'update_post_meta' )->twice();
+
+		ProcessPostJob::run( 1, $pipeline, $table );
+	}
+
+	public function test_run_filters_already_approved_entities(): void {
+		$jane = new Entity( 'Jane Smith', 'person', 0.94 );
+		$nato = new Entity( 'NATO',       'org',    0.99 );
+
+		$pipeline = $this->createMock( EntityPipeline::class );
+		$pipeline->method( 'run' )->willReturn( [ $jane, $nato ] );
+
+		$table = $this->createMock( SuggestionsTable::class );
+		$table->method( 'find_approved_names_for_post' )->willReturn( [ 'jane smith' ] );
+		$table->expects( $this->once() )->method( 'insert_entities' )->with( 1, [ $nato ] );
 
 		Functions\expect( 'update_post_meta' )->twice();
 
