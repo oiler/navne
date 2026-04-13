@@ -37,6 +37,10 @@ class ProcessPostJob {
 					foreach ( $high as $entity ) {
 						$term = wp_insert_term( $entity->name, 'navne_entity' );
 						if ( is_wp_error( $term ) ) {
+							if ( 'term_exists' !== $term->get_error_code() ) {
+								error_log( 'Navne YOLO: failed to create term for "' . $entity->name . '": ' . $term->get_error_message() );
+								continue;
+							}
 							$term_id = (int) $term->get_error_data( 'term_exists' );
 						} else {
 							$term_id = (int) $term['term_id'];
