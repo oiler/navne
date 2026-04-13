@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-04-13
+
+### Security
+- API key now read from `NAVNE_ANTHROPIC_API_KEY` constant (wp-config.php) first, keeping it out of the database when defined there; settings page reflects this with a note and hides the input field
+- Model name validated against a slug-format regex before storage (prevents arbitrary strings from reaching the API)
+- Retry endpoint now enforces a 60-second cooldown per post to prevent API cost overruns from rapid re-queuing
+- LLM error messages truncated to 200 chars to avoid logging full response bodies
+- Extracted post content capped at 8,000 chars before being sent to the LLM
+
+### Security Standards
+- Added `# Security Standards` section to CLAUDE.md documenting the established patterns for API keys, input validation, output escaping, access control, rate limiting, and LLM input handling
+
 ## [1.3.1] - 2026-04-13
 
 ### Fixed
