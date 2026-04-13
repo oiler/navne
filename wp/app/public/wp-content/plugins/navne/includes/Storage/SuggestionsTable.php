@@ -46,7 +46,7 @@ class SuggestionsTable {
 	}
 
 	/** @param Entity[] $entities */
-	public function insert_entities( int $post_id, array $entities ): void {
+	public function insert_entities( int $post_id, array $entities, string $status = 'pending' ): void {
 		foreach ( $entities as $entity ) {
 			$this->db->insert(
 				$this->table_name(),
@@ -55,7 +55,7 @@ class SuggestionsTable {
 					'entity_name' => $entity->name,
 					'entity_type' => $entity->type,
 					'confidence'  => $entity->confidence,
-					'status'      => 'pending',
+					'status'      => $status,
 				],
 				[ '%d', '%s', '%s', '%f', '%s' ]
 			);

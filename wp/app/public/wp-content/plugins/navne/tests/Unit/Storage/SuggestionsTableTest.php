@@ -62,4 +62,20 @@ class SuggestionsTableTest extends TestCase {
 
 		$this->assertSame( [ 'jane smith', 'nato' ], $result );
 	}
+
+	public function test_insert_entities_uses_provided_status(): void {
+		$db = $this->make_db();
+		$db->expects( $this->once() )
+		   ->method( 'insert' )
+		   ->with(
+				$this->anything(),
+				$this->callback( fn( array $data ) => $data['status'] === 'approved' )
+		   );
+
+		( new SuggestionsTable( $db ) )->insert_entities(
+			1,
+			[ new Entity( 'NATO', 'org', 0.99 ) ],
+			'approved'
+		);
+	}
 }
