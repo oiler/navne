@@ -52,6 +52,32 @@ Key design decisions from `docs/wordpress-entity-linking-plugin-notes.md`:
 - **Async jobs**: Use Action Scheduler for all LLM calls — never block synchronously on post save
 - **Org definition list**: Knowledge base of local figures, jargon, acronyms — primes the LLM before each post
 
+# Security Standards
+
+These are established decisions for this codebase — follow them without being asked:
+
+**API keys and secrets**
+- Never store secrets in code. The Anthropic API key is read from `NAVNE_ANTHROPIC_API_KEY` constant (wp-config.php) first, falling back to `wp_options`. New secrets follow the same pattern.
+- Never log or expose API keys, full request bodies, or full LLM responses. Truncate any dynamic content in exception messages to ≤200 chars.
+
+**Input validation**
+- All `$_POST`/`$_GET` values are sanitized with the narrowest appropriate function (`sanitize_key`, `sanitize_text_field`, `sanitize_textarea_field`). Model names and enum-style fields are validated against an explicit allowlist or format regex before storage.
+- REST API parameters are cast to their expected type at the top of each handler (`(int)`, `(string)`).
+
+**Output escaping**
+- All dynamic values in HTML are escaped for context: `esc_html()` for text, `esc_attr()` for attributes, `esc_url()` for URLs, `esc_textarea()` for textareas.
+- REST responses return raw data (no HTML escaping in JSON — React handles display escaping).
+
+**Access control**
+- Every admin handler checks `current_user_can('manage_options')` and `check_admin_referer()` before acting.
+- Every REST endpoint has a `permission_callback` that checks `current_user_can('edit_post', $post_id)`.
+
+**Rate limiting**
+- The retry endpoint enforces a 60-second cooldown per post via `_navne_job_queued_at` meta. Any new endpoint that triggers an async job or external API call needs a similar guard.
+
+**LLM input**
+- Extracted post content is capped at 8,000 chars before being sent to the LLM.
+
 # Gotchas
 
 - LLM API key required (e.g. `ANTHROPIC_API_KEY`) — plugin won't process entities without it

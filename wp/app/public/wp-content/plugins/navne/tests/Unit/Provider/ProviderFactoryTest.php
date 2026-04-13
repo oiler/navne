@@ -39,7 +39,7 @@ class ProviderFactoryTest extends TestCase {
 		} );
 
 		$this->expectException( \RuntimeException::class );
-		$this->expectExceptionMessage( 'navne_anthropic_api_key is not configured' );
+		$this->expectExceptionMessage( 'Anthropic API key is not configured' );
 		ProviderFactory::make();
 	}
 }

@@ -32,8 +32,9 @@ class SettingsPage {
 			echo '<div class="notice notice-error is-dismissible"><p>At least one post type must be selected.</p></div>';
 		}
 
-		$provider         = (string) get_option( 'navne_provider', 'anthropic' );
-		$api_key_set      = '' !== (string) get_option( 'navne_anthropic_api_key', '' );
+		$provider             = (string) get_option( 'navne_provider', 'anthropic' );
+		$api_key_via_constant = defined( 'NAVNE_ANTHROPIC_API_KEY' );
+		$api_key_set          = $api_key_via_constant || '' !== (string) get_option( 'navne_anthropic_api_key', '' );
 		$model            = (string) get_option( 'navne_anthropic_model', 'claude-sonnet-4-6' );
 		$mode             = (string) get_option( 'navne_operating_mode', 'suggest' );
 		$saved_types      = (array) get_option( 'navne_post_types', [ 'post' ] );
@@ -59,12 +60,17 @@ class SettingsPage {
 					<tr>
 						<th scope="row"><label for="navne_anthropic_api_key">API Key</label></th>
 						<td>
-							<input type="password" name="navne_anthropic_api_key" id="navne_anthropic_api_key"
-								class="regular-text" value="" autocomplete="off" />
-							<p class="description">
-								<?php echo $api_key_set ? 'Key is configured.' : 'No key set.'; ?>
-								Leave blank to keep the existing key.
-							</p>
+							<?php if ( $api_key_via_constant ) : ?>
+								<p class="description">Key is configured via <code>NAVNE_ANTHROPIC_API_KEY</code> in wp-config.php.</p>
+							<?php else : ?>
+								<input type="password" name="navne_anthropic_api_key" id="navne_anthropic_api_key"
+									class="regular-text" value="" autocomplete="off" />
+								<p class="description">
+									<?php echo $api_key_set ? 'Key is configured.' : 'No key set.'; ?>
+									Leave blank to keep the existing key.
+								</p>
+								<p class="description">For better security, define <code>NAVNE_ANTHROPIC_API_KEY</code> in wp-config.php instead.</p>
+							<?php endif; ?>
 						</td>
 					</tr>
 					<tr>
@@ -155,13 +161,19 @@ class SettingsPage {
 		$provider = sanitize_key( $_POST['navne_provider'] ?? 'anthropic' );
 		update_option( 'navne_provider', $provider );
 
-		$model = sanitize_text_field( $_POST['navne_anthropic_model'] ?? '' );
+		// Model — must be alphanumeric + hyphens only (safe for any future Anthropic model slug).
+		$model_raw = sanitize_text_field( $_POST['navne_anthropic_model'] ?? '' );
+		$model     = ( 1 === preg_match( '/^[a-z0-9][a-z0-9-]{0,98}[a-z0-9]$/i', $model_raw ) )
+			? $model_raw
+			: 'claude-sonnet-4-6';
 		update_option( 'navne_anthropic_model', $model );
 
-		// API key — only update if non-empty.
-		$api_key = sanitize_text_field( $_POST['navne_anthropic_api_key'] ?? '' );
-		if ( '' !== $api_key ) {
-			update_option( 'navne_anthropic_api_key', $api_key );
+		// API key — only update if non-empty and not overridden by a constant.
+		if ( ! defined( 'NAVNE_ANTHROPIC_API_KEY' ) ) {
+			$api_key = sanitize_text_field( $_POST['navne_anthropic_api_key'] ?? '' );
+			if ( '' !== $api_key ) {
+				update_option( 'navne_anthropic_api_key', $api_key );
+			}
 		}
 
 		// Operating mode — validate against allowed values.

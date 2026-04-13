@@ -93,7 +93,11 @@ class SuggestionsController {
 	// article"), so we always dispatch. ProcessPostJob reads the current mode at run time and applies
 	// the correct insert strategy.
 	public function retry( \WP_REST_Request $request ): \WP_REST_Response {
-		$post_id = (int) $request->get_param( 'post_id' );
+		$post_id     = (int) $request->get_param( 'post_id' );
+		$last_queued = (string) get_post_meta( $post_id, '_navne_job_queued_at', true );
+		if ( '' !== $last_queued && ( time() - strtotime( $last_queued ) ) < 60 ) {
+			return new \WP_REST_Response( [ 'error' => 'Too many requests — wait 60 seconds between retries.' ], 429 );
+		}
 		$this->table->delete_pending_for_post( $post_id );
 		update_post_meta( $post_id, '_navne_job_status', 'queued' );
 		update_post_meta( $post_id, '_navne_job_queued_at', current_time( 'mysql' ) );

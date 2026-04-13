@@ -16,6 +16,10 @@ class LlmResolver implements ResolverInterface {
 
 	private function build_prompt( \WP_Post $post, string $extracted ): string {
 		$definitions = $this->format_definitions( (string) get_option( 'navne_org_definitions', '' ) );
+		// Cap input to ~8 000 chars to limit token consumption on very long articles.
+		if ( strlen( $extracted ) > 8000 ) {
+			$extracted = substr( $extracted, 0, 8000 ) . "\n\n[... truncated for length ...]";
+		}
 		return <<<PROMPT
 You are an entity extraction assistant for a news organization.
 
@@ -83,7 +87,8 @@ PROMPT;
 
 		$data = json_decode( $json, true );
 		if ( ! is_array( $data ) ) {
-			throw new PipelineException( "LLM returned invalid JSON: {$json}" );
+			$preview = strlen( $json ) > 200 ? substr( $json, 0, 200 ) . '...' : $json;
+			throw new PipelineException( "LLM returned invalid JSON: {$preview}" );
 		}
 		// Guard against LLM returning a JSON object instead of an array.
 		if ( $data !== array_values( $data ) ) {
