@@ -16,6 +16,7 @@ class Plugin {
 		SettingsPage::register_hooks();
 		\Navne\Admin\IndexingPage::register_hooks();
 		( new SuggestionsController() )->register_routes_on_init();
+		( new \Navne\Api\BulkRunsController() )->register_routes_on_init();
 		add_action( 'save_post',           [ PostSaveHook::class,   'handle' ], 10, 3 );
 		add_action( 'navne_process_post',  [ ProcessPostJob::class, 'run' ] );
 		add_action( 'navne_bulk_dispatch', [ \Navne\BulkIndex\Dispatcher::class, 'run' ] );
