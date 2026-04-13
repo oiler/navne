@@ -32,7 +32,7 @@ This is a public plugin. Follow this process for every release:
 2. **Bump the version** in two places in `navne.php`: the `Version:` plugin header and the `NAVNE_VERSION` constant — both must match the tag
 3. **Commit**: `git commit -m "chore: release vX.Y.Z"`
 4. **Annotated tag**: `git tag -a vX.Y.Z -m "vX.Y.Z"`
-5. **Push**: `git push && git push origin vX.Y.Z`
+5. **Push**: `git push && git push hub vX.Y.Z`
 6. **GitHub Release**: `gh release create vX.Y.Z --title "vX.Y.Z" --notes-file <changelog fragment>`
 
 Semver rules:
