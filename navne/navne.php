@@ -25,10 +25,8 @@ register_activation_hook( __FILE__, function () {
 	\Navne\BulkIndex\RunItemsRepository::create_table();
 } );
 
-register_uninstall_hook( __FILE__, function () {
-	\Navne\Storage\SuggestionsTable::drop();
-	\Navne\BulkIndex\RunsRepository::drop_table();
-	\Navne\BulkIndex\RunItemsRepository::drop_table();
-} );
+// Uninstall is handled by uninstall.php — a closure here would blow up on
+// activation because register_uninstall_hook() serializes the callback into
+// wp_options, and closures can't be serialized.
 
 add_action( 'plugins_loaded', [ 'Navne\\Plugin', 'init' ] );
