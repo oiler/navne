@@ -256,4 +256,38 @@ class BulkAwareProcessorTest extends TestCase {
 
 		BulkAwareProcessor::process( 101, 42, $pipeline, $table, $runs, $items );
 	}
+
+	public function test_pipeline_exception_marks_item_failed_with_truncated_message(): void {
+		$long = str_repeat( "x", 1000 );
+
+		$runs = $this->createMock( RunsRepository::class );
+		$runs->method( "find_by_id" )->willReturn( [ "id" => 42, "mode" => "suggest", "status" => "running" ] );
+
+		$items = $this->createMock( RunItemsRepository::class );
+		$items->expects( $this->exactly( 2 ) )
+			->method( "update_status" )
+			->withConsecutive(
+				[ 42, 101, "processing" ],
+				[ 42, 101, "failed", $this->callback( function ( $msg ) {
+					return is_string( $msg ) && strlen( $msg ) === 500;
+				} ) ]
+			);
+
+		Functions\when( "get_post" )->justReturn( $this->make_post() );
+		Functions\when( "get_option" )->justReturn( [ "post" ] );
+		Functions\expect( "update_post_meta" )->twice();
+		Functions\when( "error_log" )->justReturn( true );
+
+		$pipeline = $this->createMock( EntityPipeline::class );
+		$pipeline->method( "run" )->willThrowException( new \RuntimeException( $long ) );
+
+		BulkAwareProcessor::process(
+			101,
+			42,
+			$pipeline,
+			$this->createMock( SuggestionsTable::class ),
+			$runs,
+			$items
+		);
+	}
 }

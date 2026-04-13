@@ -52,13 +52,19 @@ class BulkAwareProcessor {
 		$items->update_status( $run_id, $post_id, "processing" );
 		update_post_meta( $post_id, "_navne_job_status", "processing" );
 
-		$pipeline ??= Plugin::make_pipeline();
-		$entities  = $pipeline->run( $post_id );
+		try {
+			$pipeline ??= Plugin::make_pipeline();
+			$entities  = $pipeline->run( $post_id );
+			self::apply_mode( (string) $run["mode"], $post_id, $entities, $table );
 
-		self::apply_mode( (string) $run["mode"], $post_id, $entities, $table );
-
-		$items->update_status( $run_id, $post_id, "complete" );
-		update_post_meta( $post_id, "_navne_job_status", "complete" );
+			$items->update_status( $run_id, $post_id, "complete" );
+			update_post_meta( $post_id, "_navne_job_status", "complete" );
+		} catch ( \Exception $e ) {
+			$error = substr( $e->getMessage(), 0, Config::max_error_len() );
+			$items->update_status( $run_id, $post_id, "failed", $error );
+			update_post_meta( $post_id, "_navne_job_status", "failed" );
+			error_log( "Navne bulk pipeline failed for post " . $post_id . ": " . $error );
+		}
 	}
 
 	private static function apply_mode( string $mode, int $post_id, array $entities, SuggestionsTable $table ): void {
