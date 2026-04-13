@@ -3,6 +3,7 @@
 namespace Navne\BulkIndex;
 
 use Navne\Pipeline\EntityPipeline;
+use Navne\Plugin;
 use Navne\Storage\SuggestionsTable;
 
 class BulkAwareProcessor {
@@ -46,7 +47,30 @@ class BulkAwareProcessor {
 			return;
 		}
 
-		// Tasks 11–14: flip row to processing, run pipeline, apply mode, mark complete/failed.
-		// For now the skip branches are enough to make Task 10 tests pass.
+		$items->update_status( $run_id, $post_id, "processing" );
+		update_post_meta( $post_id, "_navne_job_status", "processing" );
+
+		$pipeline ??= Plugin::make_pipeline();
+		$entities  = $pipeline->run( $post_id );
+
+		self::apply_mode( (string) $run["mode"], $post_id, $entities, $table );
+
+		$items->update_status( $run_id, $post_id, "complete" );
+		update_post_meta( $post_id, "_navne_job_status", "complete" );
+	}
+
+	private static function apply_mode( string $mode, int $post_id, array $entities, SuggestionsTable $table ): void {
+		switch ( $mode ) {
+			case "safe":
+				// Task 13
+				break;
+			case "yolo":
+				// Task 12
+				break;
+			case "suggest":
+			default:
+				$table->insert_entities( $post_id, $entities );
+				break;
+		}
 	}
 }

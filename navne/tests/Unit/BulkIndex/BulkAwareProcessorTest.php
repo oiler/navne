@@ -107,4 +107,59 @@ class BulkAwareProcessorTest extends TestCase {
 			$items
 		);
 	}
+
+	public function test_suggest_mode_inserts_all_as_pending_and_marks_complete(): void {
+		$runs = $this->createMock( RunsRepository::class );
+		$runs->method( "find_by_id" )->willReturn( [ "id" => 42, "mode" => "suggest", "status" => "running" ] );
+
+		$items = $this->createMock( RunItemsRepository::class );
+		$items->expects( $this->exactly( 2 ) )
+			->method( "update_status" )
+			->withConsecutive(
+				[ 42, 101, "processing" ],
+				[ 42, 101, "complete" ]
+			);
+
+		Functions\when( "get_post" )->justReturn( $this->make_post() );
+		Functions\when( "get_option" )->justReturn( [ "post" ] );
+		Functions\expect( "update_post_meta" )->twice();
+
+		$entities = [ new Entity( "Jane Smith", "person", 0.9 ) ];
+		$pipeline = $this->createMock( EntityPipeline::class );
+		$pipeline->method( "run" )->willReturn( $entities );
+
+		$table = $this->createMock( SuggestionsTable::class );
+		$table->expects( $this->once() )->method( "insert_entities" )->with( 101, $entities );
+
+		BulkAwareProcessor::process( 101, 42, $pipeline, $table, $runs, $items );
+	}
+
+	public function test_uses_frozen_run_mode_not_current_option(): void {
+		$runs = $this->createMock( RunsRepository::class );
+		// Run row says suggest. The option will be stubbed to yolo.
+		$runs->method( "find_by_id" )->willReturn( [ "id" => 42, "mode" => "suggest", "status" => "running" ] );
+
+		$items = $this->createMock( RunItemsRepository::class );
+		$items->method( "update_status" );
+
+		Functions\when( "get_post" )->justReturn( $this->make_post() );
+		Functions\when( "get_option" )->alias( function ( $key, $default = null ) {
+			if ( $key === "navne_operating_mode" ) return "yolo";
+			if ( $key === "navne_post_types"     ) return [ "post" ];
+			return $default;
+		} );
+		Functions\expect( "update_post_meta" )->twice();
+
+		$entities = [ new Entity( "Jane Smith", "person", 0.9 ) ];
+		$pipeline = $this->createMock( EntityPipeline::class );
+		$pipeline->method( "run" )->willReturn( $entities );
+
+		$table = $this->createMock( SuggestionsTable::class );
+		// Suggest mode: one insert_entities call with default status. No wp_insert_term.
+		$table->expects( $this->once() )->method( "insert_entities" )->with( 101, $entities );
+
+		Functions\expect( "wp_insert_term" )->never();
+
+		BulkAwareProcessor::process( 101, 42, $pipeline, $table, $runs, $items );
+	}
 }
