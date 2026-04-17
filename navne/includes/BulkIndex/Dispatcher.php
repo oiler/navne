@@ -33,10 +33,11 @@ class Dispatcher {
 
 		$claimed = $items->claim_queued( $run_id, Config::batch_size() );
 		foreach ( $claimed as $post_id ) {
-			as_enqueue_async_action( "navne_process_post", [
-				"post_id"     => (int) $post_id,
-				"bulk_run_id" => $run_id,
-			] );
+			// Positional args (not ["post_id" => ..., "bulk_run_id" => ...]) so PHP 8
+			// doesn't try to match "bulk_run_id" to a non-existent named parameter
+			// on ProcessPostJob::run when WordPress calls the hook via
+			// call_user_func_array.
+			as_enqueue_async_action( "navne_process_post", [ (int) $post_id, $run_id ] );
 		}
 
 		as_schedule_single_action(

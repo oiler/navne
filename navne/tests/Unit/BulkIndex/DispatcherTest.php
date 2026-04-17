@@ -89,8 +89,8 @@ class DispatcherTest extends TestCase {
 
 		$this->assertSame(
 			[
-				[ "post_id" => 201, "bulk_run_id" => 42 ],
-				[ "post_id" => 202, "bulk_run_id" => 42 ],
+				[ 201, 42 ],
+				[ 202, 42 ],
 			],
 			$enqueued
 		);
