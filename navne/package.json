@@ -1,6 +1,6 @@
 {
 	"name": "navne-entity-linker",
-	"version": "1.4.0",
+	"version": "1.4.1",
 	"scripts": {
 		"build": "wp-scripts build assets/js/sidebar/index.js --output-path=assets/js/build",
 		"start": "wp-scripts start assets/js/sidebar/index.js --output-path=assets/js/build"

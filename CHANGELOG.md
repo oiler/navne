@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-04-17
+
+### Fixed
+
+- Bulk runs stalled at `0 / N processed` because `navne_process_post` was registered with default `accepted_args=1`, which caused WordPress to drop `bulk_run_id` before invoking the callback — the job took the single-post path and never updated the run items. Fix registers the hook with `accepted_args=2` and switches the dispatcher to positional args so PHP 8 doesn't misinterpret them as named arguments
+
 ## [1.4.0] - 2026-04-13
 
 [Full release notes](docs/releases/v1.4.0.md)
